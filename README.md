@@ -85,4 +85,4 @@ Veritabanı ile çalışmak için Neon'da ücretsiz proje açın, bağlantı adr
 |---|---|---|
 | 3 | Kurulum, mimari ve veri modeli | [hafta-3.md](docs/haftalar/hafta-3.md) |
 
-Her haftanın son hali `hafta-N` etiketiyle işaretlenir.
+Güncel kod `main` dalındadır; her haftanın teslim edilen son hali ayrıca `hafta-N` dalında saklanır.
