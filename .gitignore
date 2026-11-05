@@ -1,0 +1,26 @@
+# Bağımlılıklar (npm install ile yeniden kurulur, depoya konmaz)
+node_modules/
+
+# Gizli bilgiler: veritabanı şifresi, API anahtarları ASLA depoya yüklenmez
+.env
+.env.*
+!.env.example
+
+# Derleme çıktıları (Vercel/Render kendisi üretir)
+dist/
+build/
+.vite/
+
+# Loglar
+*.log
+npm-debug.log*
+logs/
+
+# İşletim sistemi ve editör dosyaları
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Test kapsamı
+coverage/

@@ -1,0 +1,21 @@
+{
+  "name": "gezi-planlayici-backend",
+  "version": "0.1.0",
+  "description": "P45 Kişiselleştirilmiş Gezi Planlayıcı - REST API",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "db:init": "node scripts/initDb.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "pg": "^8.13.0"
+  }
+}
