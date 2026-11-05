@@ -10,6 +10,15 @@ export const tokenStore = {
   clear: () => { try { sessionStorage.removeItem(TOKEN_KEY); } catch { /* yok say */ } },
 };
 
+function toQuery(f) {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(f)) {
+    if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) continue;
+    p.set(k, Array.isArray(v) ? v.join(',') : String(v));
+  }
+  return p.toString();
+}
+
 async function request(path, { method = 'GET', body } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   const token = tokenStore.get();
@@ -35,13 +44,14 @@ async function request(path, { method = 'GET', body } = {}) {
 export const api = {
   health: () => request('/api/health'),
   interests: () => request('/api/interests'),
-  pois: ({ city, interests = [], q } = {}) => {
-    const p = new URLSearchParams();
-    if (city) p.set('city', city);
-    if (interests.length) p.set('interests', interests.join(','));
-    if (q) p.set('q', q);
-    return request(`/api/pois?${p}`);
-  },
+  tags: () => request('/api/tags'),
+  // filtre: { city, interests[], tags[], q, priceMax, lat, lng, radiusKm, includeInactive }
+  pois: (f = {}) => request(`/api/pois?${toQuery(f)}`),
+  poisForMe: (f = {}) => request(`/api/pois/for-me?${toQuery(f)}`),
+
+  // ilgi profili (her zaman giriş yapan kullanıcının)
+  profile: () => request('/api/profile'),
+  saveProfile: (data) => request('/api/profile', { method: 'PUT', body: data }),
 
   // kimlik doğrulama
   register: (data) => request('/api/auth/register', { method: 'POST', body: data }),
@@ -60,5 +70,7 @@ export const api = {
   users: () => request('/api/users?limit=100'),
   changeRole: (id, role) => request(`/api/users/${id}/role`, { method: 'PATCH', body: { role } }),
   createPoi: (data) => request('/api/pois', { method: 'POST', body: data }),
+  updatePoi: (id, data) => request(`/api/pois/${id}`, { method: 'PATCH', body: data }),
+  createTag: (name) => request('/api/tags', { method: 'POST', body: { name } }),
   deletePoi: (id) => request(`/api/pois/${id}`, { method: 'DELETE' }),
 };

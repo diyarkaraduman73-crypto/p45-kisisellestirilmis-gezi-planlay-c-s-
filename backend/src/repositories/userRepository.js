@@ -26,7 +26,8 @@ export async function findById(id, db = requireDb()) {
             COALESCE(up.budget, 'orta')   AS budget,
             COALESCE(up.pace, 'normal')   AS pace,
             COALESCE(up.language, 'tr')   AS language,
-            COALESCE(array_agg(i.slug ORDER BY i.slug) FILTER (WHERE i.slug IS NOT NULL), '{}') AS interests
+            COALESCE(array_agg(i.slug ORDER BY i.slug) FILTER (WHERE i.slug IS NOT NULL), '{}') AS interests,
+            COALESCE(json_object_agg(i.slug, ui.weight) FILTER (WHERE i.slug IS NOT NULL), '{}'::json) AS interest_weights
      FROM users u
      LEFT JOIN user_preferences up ON up.user_id = u.id
      LEFT JOIN user_interests ui   ON ui.user_id = u.id
@@ -137,12 +138,17 @@ async function upsertPreferences(client, userId, { budget = 'orta', pace = 'norm
 }
 
 // N-N ilişki: önce mevcut bağlar silinir, sonra slug'lara karşılık gelen ilgiler eklenir.
-async function replaceInterests(client, userId, slugs) {
+// N-N ilişki: önce mevcut bağlar silinir, sonra yenileri ağırlıklarıyla eklenir.
+// list: ['tarih', ...] (ağırlık 3 varsayılır) veya [{ slug: 'tarih', weight: 5 }, ...]
+async function replaceInterests(client, userId, list) {
   await client.query('DELETE FROM user_interests WHERE user_id = $1', [userId]);
-  if (!slugs.length) return;
+  if (!list.length) return;
+  const items = list.map((x) => (typeof x === 'string' ? { slug: x, weight: 3 } : x));
   await client.query(
-    `INSERT INTO user_interests (user_id, interest_id)
-     SELECT $1, id FROM interests WHERE slug = ANY($2::text[])`,
-    [userId, slugs]
+    `INSERT INTO user_interests (user_id, interest_id, weight)
+     SELECT $1, i.id, x.weight
+     FROM unnest($2::text[], $3::int[]) AS x(slug, weight)
+     JOIN interests i ON i.slug = x.slug`,
+    [userId, items.map((x) => x.slug), items.map((x) => x.weight)]
   );
 }

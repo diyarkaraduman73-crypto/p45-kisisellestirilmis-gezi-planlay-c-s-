@@ -47,7 +47,8 @@ export async function findById(id, db = requireDb()) {
                          SELECT json_agg(json_build_object(
                                   'visit_order', it.visit_order, 'start_time', it.start_time,
                                   'note', it.note, 'poi_id', p.id, 'name', p.name,
-                                  'lat', p.lat, 'lng', p.lng, 'visit_minutes', p.visit_minutes)
+                                  'lat', p.lat, 'lng', p.lng, 'visit_minutes', p.visit_minutes,
+                                  'is_active', p.is_active)
                                 ORDER BY it.visit_order)
                          FROM day_plan_items it JOIN pois p ON p.id = it.poi_id
                          WHERE it.day_plan_id = d.id), '[]'::json))

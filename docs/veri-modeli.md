@@ -17,6 +17,8 @@ erDiagram
     TRIPS ||--|{ DAY_PLANS : "günlere bölünür (1-N)"
     DAY_PLANS ||--o{ DAY_PLAN_ITEMS : "durak içerir"
     POIS ||--o{ DAY_PLAN_ITEMS : "durak olur"
+    POIS ||--o{ POI_TAGS : "etiketlenir"
+    TAGS ||--o{ POI_TAGS : "N-N"
 
     USERS {
         int id PK
@@ -51,11 +53,24 @@ erDiagram
     USER_INTERESTS {
         int user_id PK,FK
         int interest_id PK,FK
+        smallint weight "1-5 ilgi düzeyi"
+    }
+    TAGS {
+        int id PK
+        varchar slug UK
+        varchar name
+    }
+    POI_TAGS {
+        int poi_id PK,FK
+        int tag_id PK,FK
     }
     CITIES {
         int id PK
         varchar name
         varchar country
+        float center_lat
+        float center_lng
+        smallint radius_km
     }
     POIS {
         int id PK
@@ -67,6 +82,10 @@ erDiagram
         float lng
         smallint visit_minutes
         smallint price_level "0-3"
+        varchar district
+        varchar address
+        bool is_active
+        int created_by FK
     }
     TRIPS {
         int id PK
@@ -101,7 +120,7 @@ erDiagram
 |---|---|---|
 | **Kullanıcı** | `users`, `user_preferences`, `sessions` | Gezgin/yönetici, tercihler ve açık oturumlar (Hafta 5) |
 | **İlgi** | `interests`, `user_interests` | İlgi alanı kataloğu ve kullanıcının seçtikleri |
-| **POI** | `pois`, `cities` | Gezilecek noktalar ve bulundukları şehir |
+| **POI** | `pois`, `cities`, `tags`, `poi_tags` | Gezilecek noktalar, şehir (merkez + yarıçap), etiketler (Hafta 6) |
 | **Rota** | `trips` | Kullanıcının bir şehir için oluşturduğu gezi; paylaşım kodu taşır |
 | **Gün planı** | `day_plans`, `day_plan_items` | Rotanın her günü ve o günün sıralı durakları |
 

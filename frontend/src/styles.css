@@ -126,3 +126,43 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 0
   .topbar { gap: 8px; }
   .who { display: none; }
 }
+
+/* ---------- Hafta 6: POI kataloğu ve ilgi profili ---------- */
+.chip.small { font-size: 0.75rem; padding: 4px 10px; }
+.chip .muted { font-size: 0.7rem; margin-left: 2px; }
+.chip.active .muted { color: rgba(255,255,255,.8); }
+fieldset:disabled { opacity: 0.45; }
+.switch { flex-direction: row !important; align-items: center; gap: 8px !important; font-weight: 600; cursor: pointer; }
+.link-btn { margin-left: auto; font: inherit; font-size: 0.8rem; font-weight: 500; background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; }
+.poi-list button { grid-template-columns: 12px 1fr; }
+.poi-list .poi-name { display: flex; justify-content: space-between; gap: 8px; }
+.poi-list .reasons, .poi-list .tag-row { grid-column: 2; font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.tag { display: inline-block; margin-right: 6px; }
+.score { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 0 8px; font-size: 0.75rem; font-weight: 700; }
+
+.page.narrow-md { max-width: 620px; }
+.interest-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.interest-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); }
+.interest-list li.on { border-color: var(--accent); background: var(--accent-soft); }
+.check { flex-direction: row !important; align-items: center; gap: 8px !important; cursor: pointer; }
+.weight { display: flex; align-items: center; gap: 8px; }
+.weight input { accent-color: var(--accent); width: 120px; }
+.weight .muted { width: 54px; }
+
+.poi-form { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.poi-form h3 { margin: 0; font-size: 0.95rem; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form textarea { font: inherit; font-weight: 400; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; resize: vertical; }
+.tag-add { margin-top: 8px; }
+.tag-add input { flex: 1; font: inherit; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; }
+.list-filter { width: 100%; font: inherit; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; }
+.admin-list li { gap: 8px; }
+.admin-list li.inactive > span:first-child { opacity: 0.55; }
+.admin-list .row { gap: 4px; flex-shrink: 0; }
+.admin-list .ghost { padding: 4px 8px; font-size: 0.78rem; }
+.admin-grid { grid-template-columns: 1.4fr 1fr; }
+
+@media (max-width: 800px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .admin-list li { flex-direction: column; align-items: flex-start; }
+}

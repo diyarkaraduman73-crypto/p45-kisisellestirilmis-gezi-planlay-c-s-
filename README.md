@@ -23,7 +23,7 @@
 ```
 ├── frontend/                 React arayüzü (Vercel'de yayınlanır)
 │   └── src/
-│       ├── pages/            Sayfalar (Keşfet, Giriş, Kayıt, Rotalarım, Yönetim)
+│       ├── pages/            Sayfalar (Keşfet, Giriş, Kayıt, Profilim, Rotalarım, Yönetim)
 │       ├── auth/             Oturum durumu (AuthContext)
 │       ├── components/       Tekrar kullanılabilir bileşenler (form, harita)
 │       └── services/         Backend API istemcisi
@@ -41,7 +41,7 @@
 │       ├── utils/            Doğrulama, şifre özetleme, hata sınıfları
 │       ├── config/           Veritabanı bağlantısı
 │       └── data/seed.js      Başlangıç verisi
-└── docs/                     Mimari, ER diyagramı, haftalık raporlar
+└── docs/                     Mimari, ER diyagramı, güvenlik notu, modül açıklamaları, haftalık raporlar
 ```
 
 Ayrıntılar: [Mimari şema](docs/mimari.md) · [ER diyagramı ve veri modeli](docs/veri-modeli.md) · [Güvenlik notu](docs/guvenlik-notu.md)
@@ -94,8 +94,12 @@ Veritabanı ile çalışmak için Neon'da ücretsiz proje açın, bağlantı adr
 | POST | `/api/auth/logout` | 🔑 | Oturumu sonlandırır |
 | GET | `/api/auth/me` | 🔑 | Giriş yapan kullanıcı |
 | POST | `/api/auth/password` | 🔑 | Parola değiştirir, diğer oturumları kapatır |
-| GET | `/api/pois`, `/api/pois/:id` | 🔓 | POI listesi (`city`, `interests`, `q` filtreleri) |
-| POST / PATCH / DELETE | `/api/pois`, `/api/pois/:id` | 🛡️ | POI yönetimi |
+| GET | `/api/pois`, `/api/pois/:id` | 🔓 | POI kataloğu: `city`, `interests`, `tags`, `q`, `priceMax`, `lat`+`lng`+`radiusKm` |
+| GET | `/api/pois/for-me` | 🔑 | İlgi profiline göre puanlı ve gerekçeli liste |
+| POST / PATCH / DELETE | `/api/pois`, `/api/pois/:id` | 🛡️ | POI yönetimi (kullanılan POI silinmez, pasifleştirilir) |
+| GET | `/api/tags` | 🔓 | Etiketler |
+| POST / DELETE | `/api/tags`, `/api/tags/:slug` | 🛡️ | Etiket yönetimi |
+| GET / PUT | `/api/profile` | 🔑 | Kendi ilgi profilim (ilgi düzeyi 1–5, bütçe, tempo) |
 | GET / POST | `/api/users` | 🛡️ | Kullanıcı listesi / kullanıcı ekleme |
 | GET / PATCH / DELETE | `/api/users/:id` | 👤 | Profil (tercih ve ilgileriyle) |
 | PATCH | `/api/users/:id/role` | 🛡️ | Rol değiştirme |
@@ -121,5 +125,6 @@ Korumalı uçlara `Authorization: Bearer <token>` başlığıyla istek atılır.
 | 3 | Kurulum, mimari ve veri modeli | [hafta-3.md](docs/haftalar/hafta-3.md) |
 | 4 | Veritabanı tasarımı ve veri erişim katmanı | [hafta-4.md](docs/haftalar/hafta-4.md) |
 | 5 | Kullanıcı yönetimi ve kimlik doğrulama | [hafta-5.md](docs/haftalar/hafta-5.md) |
+| 6 | Çekirdek Modül A: POI Kataloğu ve İlgi Profili | [hafta-6.md](docs/haftalar/hafta-6.md) · [modül açıklaması](docs/moduller/poi-katalogu-ilgi-profili.md) |
 
 Güncel kod `main` dalındadır; her haftanın teslim edilen son hali ayrıca `hafta-N` dalında saklanır.

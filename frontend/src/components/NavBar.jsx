@@ -15,6 +15,7 @@ export default function NavBar() {
       <a href="#/" className="logo">🧭 Gezi Planlayıcı</a>
       <nav className="nav">
         {link('/', 'Keşfet')}
+        {user && link('/profil', 'Profilim')}
         {user && link('/rotalarim', 'Rotalarım')}
         {user?.role === 'yonetici' && link('/yonetim', 'Yönetim')}
       </nav>

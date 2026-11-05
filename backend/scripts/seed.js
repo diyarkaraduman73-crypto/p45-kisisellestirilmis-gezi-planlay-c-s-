@@ -5,7 +5,7 @@
 // şifreler herkes için aynı sahte değerin özetidir. Gerçek kişisel veri kullanılmaz.
 import 'dotenv/config';
 import { pool, withTransaction } from '../src/config/db.js';
-import { CITIES, INTERESTS, POIS } from '../src/data/seed.js';
+import { CITIES, INTERESTS, POIS, TAGS } from '../src/data/seed.js';
 import { hashPassword } from '../src/utils/password.js';
 import * as userRepository from '../src/repositories/userRepository.js';
 import * as tripRepository from '../src/repositories/tripRepository.js';
@@ -27,7 +27,7 @@ const sample = (arr, n) => [...arr].sort(() => rand() - 0.5).slice(0, n);
 try {
   if (process.argv.includes('--reset')) {
     await pool.query(`TRUNCATE day_plan_items, day_plans, trips, user_interests, user_preferences,
-                      sessions, users, pois, interests, cities RESTART IDENTITY CASCADE`);
+                      sessions, poi_tags, tags, users, pois, interests, cities RESTART IDENTITY CASCADE`);
     console.log('Tablolar boşaltıldı.');
   }
 
@@ -40,21 +40,34 @@ try {
   // 1) Referans verileri: şehirler, ilgi alanları, POI'ler (tek transaction)
   await withTransaction(async (client) => {
     for (const c of CITIES) {
-      await client.query('INSERT INTO cities (name, country) VALUES ($1, $2) ON CONFLICT DO NOTHING', [c.name, c.country]);
+      await client.query(
+        `INSERT INTO cities (name, country, center_lat, center_lng, radius_km) VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (name, country) DO UPDATE
+           SET center_lat = EXCLUDED.center_lat, center_lng = EXCLUDED.center_lng, radius_km = EXCLUDED.radius_km`,
+        [c.name, c.country, c.center_lat, c.center_lng, c.radius_km]
+      );
     }
     for (const i of INTERESTS) {
       await client.query('INSERT INTO interests (slug, name) VALUES ($1, $2) ON CONFLICT (slug) DO NOTHING', [i.slug, i.name]);
     }
+    for (const t of TAGS) {
+      await client.query('INSERT INTO tags (slug, name) VALUES ($1, $2) ON CONFLICT (slug) DO NOTHING', [t.slug, t.name]);
+    }
     for (const p of POIS) {
-      await client.query(
-        `INSERT INTO pois (city_id, interest_id, name, description, lat, lng, visit_minutes, price_level)
+      const { rows: [poi] } = await client.query(
+        `INSERT INTO pois (city_id, interest_id, name, description, district, lat, lng, visit_minutes, price_level)
          VALUES ((SELECT id FROM cities WHERE name = $1), (SELECT id FROM interests WHERE slug = $2),
-                 $3, $4, $5, $6, $7, $8)`,
-        [p.city, p.interest, p.name, p.description, p.lat, p.lng, p.visit_minutes, p.price_level]
+                 $3, $4, $5, $6, $7, $8, $9)
+         RETURNING id`,
+        [p.city, p.interest, p.name, p.description, p.district, p.lat, p.lng, p.visit_minutes, p.price_level]
+      );
+      await client.query(
+        `INSERT INTO poi_tags (poi_id, tag_id) SELECT $1, id FROM tags WHERE slug = ANY($2::text[])`,
+        [poi.id, p.tags]
       );
     }
   });
-  console.log(`✔ ${CITIES.length} şehir, ${INTERESTS.length} ilgi alanı, ${POIS.length} POI`);
+  console.log(`✔ ${CITIES.length} şehir, ${INTERESTS.length} ilgi alanı, ${TAGS.length} etiket, ${POIS.length} POI`);
 
   const dbPois = (await pool.query('SELECT p.id, i.slug FROM pois p JOIN interests i ON i.id = p.interest_id')).rows;
   const cityId = (await pool.query('SELECT id FROM cities WHERE name = $1', ['İstanbul'])).rows[0].id;
@@ -75,12 +88,13 @@ try {
   for (let n = 1; n <= USER_COUNT; n++) {
     const no = String(n).padStart(2, '0');
     const interests = sample(slugs, 2 + Math.floor(rand() * 3));
+    const weighted = interests.map((slug) => ({ slug, weight: 1 + Math.floor(rand() * 5) })); // ilgi düzeyi 1-5
     const user = await userRepository.create({
       fullName: `Deneme Kullanıcı ${no}`,
       email: `kullanici${no}@example.com`,
       passwordHash,
       preferences: { budget: pick(['dusuk', 'orta', 'yuksek']), pace: pick(['sakin', 'normal', 'yogun']) },
-      interestSlugs: interests,
+      interestSlugs: weighted,
     });
 
     const tripTotal = n % 3 === 0 ? 0 : 1 + (n % 2); // bazı kullanıcıların rotası yok

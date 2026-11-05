@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import MyTripsPage from './pages/MyTripsPage.jsx';
 import AdminPage from './pages/AdminPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
 
 // Sayfa → erişim kuralı tablosu
 function Router() {
@@ -18,6 +19,8 @@ function Router() {
       return <RegisterPage />;
     case '/rotalarim':
       return <ProtectedRoute roles={['gezgin', 'yonetici']}><MyTripsPage /></ProtectedRoute>;
+    case '/profil':
+      return <ProtectedRoute roles={['gezgin', 'yonetici']}><ProfilePage /></ProtectedRoute>;
     case '/yonetim':
       return <ProtectedRoute roles={['yonetici']}><AdminPage /></ProtectedRoute>;
     default:

@@ -25,7 +25,11 @@ $$;
 CREATE TABLE public.cities (
     id integer NOT NULL,
     name character varying(80) NOT NULL,
-    country character varying(80) NOT NULL
+    country character varying(80) NOT NULL,
+    center_lat double precision,
+    center_lng double precision,
+    radius_km smallint DEFAULT 50 NOT NULL,
+    CONSTRAINT chk_cities_radius CHECK (((radius_km >= 1) AND (radius_km <= 300)))
 );
 
 --
@@ -137,6 +141,15 @@ CREATE SEQUENCE public.interests_id_seq
 ALTER SEQUENCE public.interests_id_seq OWNED BY public.interests.id;
 
 --
+-- Name: poi_tags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.poi_tags (
+    poi_id integer NOT NULL,
+    tag_id integer NOT NULL
+);
+
+--
 -- Name: pois; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -150,6 +163,12 @@ CREATE TABLE public.pois (
     lng double precision NOT NULL,
     visit_minutes smallint DEFAULT 60 NOT NULL,
     price_level smallint DEFAULT 0 NOT NULL,
+    district character varying(80),
+    address character varying(200),
+    is_active boolean DEFAULT true NOT NULL,
+    created_by integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT pois_lat_check CHECK (((lat >= ('-90'::integer)::double precision) AND (lat <= (90)::double precision))),
     CONSTRAINT pois_lng_check CHECK (((lng >= ('-180'::integer)::double precision) AND (lng <= (180)::double precision))),
     CONSTRAINT pois_price_level_check CHECK (((price_level >= 0) AND (price_level <= 3))),
@@ -198,6 +217,35 @@ CREATE TABLE public.sessions (
 );
 
 --
+-- Name: tags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tags (
+    id integer NOT NULL,
+    slug character varying(40) NOT NULL,
+    name character varying(60) NOT NULL,
+    CONSTRAINT tags_slug_check CHECK (((slug)::text ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text))
+);
+
+--
+-- Name: tags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+--
+-- Name: tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.tags_id_seq OWNED BY public.tags.id;
+
+--
 -- Name: trips; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -238,7 +286,9 @@ ALTER SEQUENCE public.trips_id_seq OWNED BY public.trips.id;
 
 CREATE TABLE public.user_interests (
     user_id integer NOT NULL,
-    interest_id integer NOT NULL
+    interest_id integer NOT NULL,
+    weight smallint DEFAULT 3 NOT NULL,
+    CONSTRAINT chk_user_interests_weight CHECK (((weight >= 1) AND (weight <= 5)))
 );
 
 --
@@ -321,6 +371,12 @@ ALTER TABLE ONLY public.interests ALTER COLUMN id SET DEFAULT nextval('public.in
 ALTER TABLE ONLY public.pois ALTER COLUMN id SET DEFAULT nextval('public.pois_id_seq'::regclass);
 
 --
+-- Name: tags id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tags ALTER COLUMN id SET DEFAULT nextval('public.tags_id_seq'::regclass);
+
+--
 -- Name: trips id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -389,6 +445,13 @@ ALTER TABLE ONLY public.interests
     ADD CONSTRAINT interests_slug_key UNIQUE (slug);
 
 --
+-- Name: poi_tags poi_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.poi_tags
+    ADD CONSTRAINT poi_tags_pkey PRIMARY KEY (poi_id, tag_id);
+
+--
 -- Name: pois pois_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -408,6 +471,20 @@ ALTER TABLE ONLY public.schema_migrations
 
 ALTER TABLE ONLY public.sessions
     ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+--
+-- Name: tags tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tags
+    ADD CONSTRAINT tags_pkey PRIMARY KEY (id);
+
+--
+-- Name: tags tags_slug_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tags
+    ADD CONSTRAINT tags_slug_key UNIQUE (slug);
 
 --
 -- Name: trips trips_pkey; Type: CONSTRAINT; Schema: public; Owner: -
@@ -458,6 +535,18 @@ ALTER TABLE ONLY public.users
 CREATE INDEX idx_day_plan_items_poi ON public.day_plan_items USING btree (poi_id);
 
 --
+-- Name: idx_poi_tags_tag; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_poi_tags_tag ON public.poi_tags USING btree (tag_id);
+
+--
+-- Name: idx_pois_active_city; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_pois_active_city ON public.pois USING btree (city_id) WHERE is_active;
+
+--
 -- Name: idx_pois_city_interest; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -468,6 +557,12 @@ CREATE INDEX idx_pois_city_interest ON public.pois USING btree (city_id, interes
 --
 
 CREATE INDEX idx_pois_interest ON public.pois USING btree (interest_id);
+
+--
+-- Name: idx_pois_lat_lng; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_pois_lat_lng ON public.pois USING btree (lat, lng);
 
 --
 -- Name: idx_pois_name_lower; Type: INDEX; Schema: public; Owner: -
@@ -506,6 +601,18 @@ CREATE INDEX idx_trips_user_created ON public.trips USING btree (user_id, create
 CREATE INDEX idx_user_interests_interest ON public.user_interests USING btree (interest_id);
 
 --
+-- Name: uq_pois_city_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_pois_city_name ON public.pois USING btree (city_id, lower((name)::text));
+
+--
+-- Name: pois trg_pois_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_pois_updated_at BEFORE UPDATE ON public.pois FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+--
 -- Name: trips trg_trips_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -533,11 +640,32 @@ ALTER TABLE ONLY public.day_plans
     ADD CONSTRAINT day_plans_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE CASCADE;
 
 --
+-- Name: poi_tags poi_tags_poi_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.poi_tags
+    ADD CONSTRAINT poi_tags_poi_id_fkey FOREIGN KEY (poi_id) REFERENCES public.pois(id) ON DELETE CASCADE;
+
+--
+-- Name: poi_tags poi_tags_tag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.poi_tags
+    ADD CONSTRAINT poi_tags_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES public.tags(id) ON DELETE CASCADE;
+
+--
 -- Name: pois pois_city_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.pois
     ADD CONSTRAINT pois_city_id_fkey FOREIGN KEY (city_id) REFERENCES public.cities(id);
+
+--
+-- Name: pois pois_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pois
+    ADD CONSTRAINT pois_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id) ON DELETE SET NULL;
 
 --
 -- Name: pois pois_interest_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -

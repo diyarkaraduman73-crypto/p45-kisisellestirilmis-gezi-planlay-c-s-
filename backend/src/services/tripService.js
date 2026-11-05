@@ -33,8 +33,8 @@ async function parseDays(days, dayCount) {
     return { dayNumber, summary: d.summary, items };
   });
 
-  if (poiIds.size && (await poiRepository.countExisting([...poiIds])) !== poiIds.size) {
-    throw new ValidationError('Planda var olmayan bir POI kullanılmış');
+  if (poiIds.size && (await poiRepository.countActive([...poiIds])) !== poiIds.size) {
+    throw new ValidationError('Planda var olmayan veya pasif bir POI kullanılmış'); // POI modülü K7
   }
   return parsed;
 }
