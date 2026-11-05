@@ -2,15 +2,15 @@
 import { requireDb, withTransaction } from '../config/db.js';
 
 // password_hash asla dışarı verilmez
-const USER_COLUMNS = 'u.id, u.full_name, u.email, u.created_at';
+const USER_COLUMNS = 'u.id, u.full_name, u.email, u.role, u.created_at, u.last_login_at';
 
 // CREATE: kullanıcı + tercihleri + ilgi alanları tek transaction'da eklenir.
-export async function create({ fullName, email, passwordHash, preferences = {}, interestSlugs = [] }) {
+export async function create({ fullName, email, passwordHash, role = 'gezgin', preferences = {}, interestSlugs = [] }) {
   return withTransaction(async (client) => {
     const { rows } = await client.query(
-      `INSERT INTO users (full_name, email, password_hash) VALUES ($1, $2, $3)
+      `INSERT INTO users (full_name, email, password_hash, role) VALUES ($1, $2, $3, $4)
        RETURNING id`,
-      [fullName, email, passwordHash]
+      [fullName, email, passwordHash, role]
     );
     const userId = rows[0].id;
     await upsertPreferences(client, userId, preferences);
@@ -71,6 +71,58 @@ export async function update(id, { fullName, email, preferences, interestSlugs }
 export async function remove(id) {
   const { rowCount } = await requireDb().query('DELETE FROM users WHERE id = $1', [id]);
   return rowCount > 0;
+}
+
+// --- Kimlik doğrulama için (password_hash yalnızca burada okunur, servis dışına çıkmaz) ---
+
+export async function findAuthByEmail(email) {
+  const { rows } = await requireDb().query(
+    `SELECT id, password_hash, role, failed_login_count, locked_until
+     FROM users WHERE email = $1`,
+    [email]
+  );
+  return rows[0] || null;
+}
+
+export async function findPasswordHash(id) {
+  const { rows } = await requireDb().query('SELECT password_hash FROM users WHERE id = $1', [id]);
+  return rows[0]?.password_hash ?? null;
+}
+
+// Başarısız giriş: sayaç artar; eşiğe ulaşınca hesap kilitlenir ve sayaç sıfırlanır.
+// Tek UPDATE ifadesiyle yapılır, eş zamanlı isteklerde sayaç kaybolmaz.
+export async function recordFailedLogin(id, maxAttempts, lockMinutes) {
+  const { rows } = await requireDb().query(
+    `UPDATE users SET
+       failed_login_count = CASE WHEN failed_login_count + 1 >= $2 THEN 0 ELSE failed_login_count + 1 END,
+       locked_until       = CASE WHEN failed_login_count + 1 >= $2
+                                 THEN NOW() + make_interval(mins => $3) ELSE locked_until END
+     WHERE id = $1
+     RETURNING failed_login_count, locked_until`,
+    [id, maxAttempts, lockMinutes]
+  );
+  return rows[0];
+}
+
+export async function recordSuccessfulLogin(id) {
+  await requireDb().query(
+    `UPDATE users SET failed_login_count = 0, locked_until = NULL, last_login_at = NOW() WHERE id = $1`,
+    [id]
+  );
+}
+
+export async function updatePassword(id, passwordHash) {
+  await requireDb().query('UPDATE users SET password_hash = $2 WHERE id = $1', [id, passwordHash]);
+}
+
+export async function updateRole(id, role) {
+  const { rowCount } = await requireDb().query('UPDATE users SET role = $2 WHERE id = $1', [id, role]);
+  return rowCount ? findById(id) : null;
+}
+
+export async function countByRole(role) {
+  const { rows } = await requireDb().query('SELECT COUNT(*)::int AS n FROM users WHERE role = $1', [role]);
+  return rows[0].n;
 }
 
 // --- yardımcılar (transaction içindeki client ile çalışır) ---

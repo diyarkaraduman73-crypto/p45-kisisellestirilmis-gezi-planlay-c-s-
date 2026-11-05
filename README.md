@@ -23,7 +23,8 @@
 ```
 ├── frontend/                 React arayüzü (Vercel'de yayınlanır)
 │   └── src/
-│       ├── pages/            Sayfalar
+│       ├── pages/            Sayfalar (Keşfet, Giriş, Kayıt, Rotalarım, Yönetim)
+│       ├── auth/             Oturum durumu (AuthContext)
 │       ├── components/       Tekrar kullanılabilir bileşenler (form, harita)
 │       └── services/         Backend API istemcisi
 ├── backend/                  REST API (Render'da yayınlanır)
@@ -36,14 +37,14 @@
 │       ├── controllers/      SUNUM: istek/yanıt
 │       ├── services/         İŞ: kurallar, doğrulama
 │       ├── repositories/     VERİ: SQL erişimi
-│       ├── middleware/       Hata yönetimi
+│       ├── middleware/       Kimlik doğrulama, rol kontrolü, güvenlik başlıkları, hata yönetimi
 │       ├── utils/            Doğrulama, şifre özetleme, hata sınıfları
 │       ├── config/           Veritabanı bağlantısı
 │       └── data/seed.js      Başlangıç verisi
 └── docs/                     Mimari, ER diyagramı, haftalık raporlar
 ```
 
-Ayrıntılar: [Mimari şema](docs/mimari.md) · [ER diyagramı ve veri modeli](docs/veri-modeli.md)
+Ayrıntılar: [Mimari şema](docs/mimari.md) · [ER diyagramı ve veri modeli](docs/veri-modeli.md) · [Güvenlik notu](docs/guvenlik-notu.md)
 
 ## Yerelde çalıştırma
 
@@ -52,7 +53,7 @@ Gereksinim: Node.js 18 veya üzeri.
 ```bash
 # 1) Backend
 cd backend
-cp .env.example .env        # DATABASE_URL boş kalırsa örnek verilerle çalışır
+cp .env.example .env        # DATABASE_URL ve JWT_SECRET'ı doldurun
 npm install
 npm run dev                 # http://localhost:4000/api/health
 
@@ -73,27 +74,42 @@ Veritabanı ile çalışmak için Neon'da ücretsiz proje açın, bağlantı adr
 | `npm run db:seed` | Sentetik örnek veriyi yükler (`-- --reset` ile önce tabloları boşaltır) |
 | `npm run db:setup` | İkisini birlikte çalıştırır |
 
+## Demo hesaplar
+
+`npm run db:seed` sonrası (hepsi sentetik, parola: `Deneme1234!`):
+
+| Rol | E-posta |
+|---|---|
+| Yönetici | `yonetici@example.com` |
+| Gezgin | `kullanici01@example.com` … `kullanici12@example.com` |
+
 ## API
 
-| Metot | Yol | Açıklama |
-|---|---|---|
-| GET | `/api/health` | Sunucu ve veritabanı durumu |
-| GET | `/api/interests`, `/api/cities` | Referans listeleri |
-| GET / POST | `/api/pois` | POI listesi (`city`, `interests`, `q` filtreleri) / yeni POI |
-| GET / PATCH / DELETE | `/api/pois/:id` | Tek POI |
-| GET / POST | `/api/users` | Kullanıcı listesi (sayfalı) / yeni kullanıcı |
-| GET / PATCH / DELETE | `/api/users/:id` | Tek kullanıcı (tercih ve ilgileriyle) |
-| GET | `/api/users/:id/trips` | Kullanıcının rotaları |
-| POST | `/api/trips` | Rota + gün planları + duraklar (tek transaction) |
-| GET / PATCH / DELETE | `/api/trips/:id` | Tek rota (gün gün) |
-| GET | `/api/trips/shared/:code` | Paylaşım koduyla rota |
+🔓 herkese açık · 🔑 giriş gerekli · 👤 kendisi veya yönetici · 🛡️ yalnızca yönetici
 
-Okuma uçları veritabanı olmadan da örnek veriyle çalışır; kullanıcı ve rota işlemleri veritabanı gerektirir.
+| Metot | Yol | Erişim | Açıklama |
+|---|---|---|---|
+| GET | `/api/health`, `/api/interests`, `/api/cities` | 🔓 | Durum ve referans listeleri |
+| POST | `/api/auth/register`, `/api/auth/login` | 🔓 | Kayıt / giriş → `{ token, user }` |
+| POST | `/api/auth/logout` | 🔑 | Oturumu sonlandırır |
+| GET | `/api/auth/me` | 🔑 | Giriş yapan kullanıcı |
+| POST | `/api/auth/password` | 🔑 | Parola değiştirir, diğer oturumları kapatır |
+| GET | `/api/pois`, `/api/pois/:id` | 🔓 | POI listesi (`city`, `interests`, `q` filtreleri) |
+| POST / PATCH / DELETE | `/api/pois`, `/api/pois/:id` | 🛡️ | POI yönetimi |
+| GET / POST | `/api/users` | 🛡️ | Kullanıcı listesi / kullanıcı ekleme |
+| GET / PATCH / DELETE | `/api/users/:id` | 👤 | Profil (tercih ve ilgileriyle) |
+| PATCH | `/api/users/:id/role` | 🛡️ | Rol değiştirme |
+| GET | `/api/users/:id/trips` | 👤 | Kullanıcının rotaları |
+| POST | `/api/trips` | 🔑 | Rota + gün planları + duraklar (giriş yapan adına) |
+| GET / PATCH / DELETE | `/api/trips/:id` | 👤 | Rota (sahibi veya yönetici) |
+| GET | `/api/trips/shared/:code` | 🔓 | Paylaşım koduyla rota |
+
+Korumalı uçlara `Authorization: Bearer <token>` başlığıyla istek atılır. Ayrıntılar: [Güvenlik notu](docs/guvenlik-notu.md)
 
 ## Ücretsiz yayınlama
 
 1. **Neon:** Proje oluştur → bağlantı adresini kopyala → yerelde `npm run db:setup`.
-2. **Render:** New → Web Service → bu depo → *Root Directory* `backend`, *Build* `npm install`, *Start* `npm start`, plan **Free**. Ortam değişkenleri: `DATABASE_URL`, `CORS_ORIGIN` (Vercel adresin).
+2. **Render:** New → Web Service → bu depo → *Root Directory* `backend`, *Build* `npm install`, *Start* `npm start`, plan **Free**. Ortam değişkenleri: `DATABASE_URL`, `CORS_ORIGIN` (Vercel adresin), `JWT_SECRET` (en az 32 karakter rastgele), `NODE_ENV=production`.
 3. **Vercel:** New Project → bu depo → *Root Directory* `frontend` (Vite otomatik algılanır). Ortam değişkeni: `VITE_API_URL` = Render adresin.
 
 > Render ücretsiz servisi 15 dk boşta kalınca uyur; ilk istek yaklaşık 1 dakika sürebilir. Sunumdan önce siteyi bir kez açın.
@@ -104,5 +120,6 @@ Okuma uçları veritabanı olmadan da örnek veriyle çalışır; kullanıcı ve
 |---|---|---|
 | 3 | Kurulum, mimari ve veri modeli | [hafta-3.md](docs/haftalar/hafta-3.md) |
 | 4 | Veritabanı tasarımı ve veri erişim katmanı | [hafta-4.md](docs/haftalar/hafta-4.md) |
+| 5 | Kullanıcı yönetimi ve kimlik doğrulama | [hafta-5.md](docs/haftalar/hafta-5.md) |
 
 Güncel kod `main` dalındadır; her haftanın teslim edilen son hali ayrıca `hafta-N` dalında saklanır.

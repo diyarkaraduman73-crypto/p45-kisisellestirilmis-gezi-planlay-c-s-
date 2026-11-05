@@ -7,6 +7,7 @@
 ```mermaid
 erDiagram
     USERS ||--o| USER_PREFERENCES : "sahiptir (1-1)"
+    USERS ||--o{ SESSIONS : "oturum açar (1-N)"
     USERS ||--o{ USER_INTERESTS : "seçer"
     INTERESTS ||--o{ USER_INTERESTS : "seçilir"
     INTERESTS ||--o{ POIS : "sınıflandırır (1-N)"
@@ -22,7 +23,19 @@ erDiagram
         varchar full_name
         varchar email UK
         varchar password_hash
+        varchar role "gezgin|yonetici"
+        smallint failed_login_count
+        timestamptz locked_until
+        timestamptz last_login_at
         timestamptz created_at
+    }
+    SESSIONS {
+        uuid id PK "JWT jti"
+        int user_id FK
+        timestamptz created_at
+        timestamptz expires_at
+        timestamptz revoked_at
+        varchar user_agent
     }
     USER_PREFERENCES {
         int user_id PK,FK
@@ -86,7 +99,7 @@ erDiagram
 
 | Varlık | Tablo | Açıklama |
 |---|---|---|
-| **Kullanıcı** | `users`, `user_preferences` | Gezgin ve bütçe/tempo tercihleri |
+| **Kullanıcı** | `users`, `user_preferences`, `sessions` | Gezgin/yönetici, tercihler ve açık oturumlar (Hafta 5) |
 | **İlgi** | `interests`, `user_interests` | İlgi alanı kataloğu ve kullanıcının seçtikleri |
 | **POI** | `pois`, `cities` | Gezilecek noktalar ve bulundukları şehir |
 | **Rota** | `trips` | Kullanıcının bir şehir için oluşturduğu gezi; paylaşım kodu taşır |

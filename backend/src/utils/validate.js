@@ -2,6 +2,7 @@ import { ValidationError } from './errors.js';
 
 export const BUDGETS = ['dusuk', 'orta', 'yuksek'];
 export const PACES = ['sakin', 'normal', 'yogun'];
+export const ROLES = ['gezgin', 'yonetici'];
 
 export function toId(value, label = 'Kimlik') {
   const id = Number(value);

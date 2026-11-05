@@ -2,13 +2,15 @@
 import { Router } from 'express';
 import * as c from '../controllers/poiController.js';
 import { asyncHandler as h } from '../middleware/asyncHandler.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = Router();
+const admin = [requireAuth, requireRole('yonetici')];
 
-router.get('/', h(c.listPois));        // GET    /api/pois?city=İstanbul&interests=tarih,doga&q=gal
-router.get('/:id', h(c.getPoi));       // GET    /api/pois/3
-router.post('/', h(c.createPoi));      // POST   /api/pois
-router.patch('/:id', h(c.updatePoi));  // PATCH  /api/pois/3
-router.delete('/:id', h(c.deletePoi)); // DELETE /api/pois/3
+router.get('/', h(c.listPois));                 // herkese açık: GET /api/pois?city=&interests=&q=
+router.get('/:id', h(c.getPoi));                // herkese açık
+router.post('/', ...admin, h(c.createPoi));     // yalnızca yönetici
+router.patch('/:id', ...admin, h(c.updatePoi)); // yalnızca yönetici
+router.delete('/:id', ...admin, h(c.deletePoi));// yalnızca yönetici
 
 export default router;

@@ -5,7 +5,6 @@
 -- PostgreSQL database dump
 --
 
-
 --
 -- Name: set_updated_at(); Type: FUNCTION; Schema: public; Owner: -
 --
@@ -185,6 +184,20 @@ CREATE TABLE public.schema_migrations (
 );
 
 --
+-- Name: sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sessions (
+    id uuid NOT NULL,
+    user_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    expires_at timestamp with time zone NOT NULL,
+    revoked_at timestamp with time zone,
+    user_agent character varying(255),
+    CONSTRAINT sessions_check CHECK ((expires_at > created_at))
+);
+
+--
 -- Name: trips; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -251,7 +264,12 @@ CREATE TABLE public.users (
     email character varying(255) NOT NULL,
     password_hash character varying(255) NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT chk_users_email_format CHECK ((((email)::text = lower((email)::text)) AND ((email)::text ~~ '%_@_%._%'::text)))
+    role character varying(10) DEFAULT 'gezgin'::character varying NOT NULL,
+    failed_login_count smallint DEFAULT 0 NOT NULL,
+    locked_until timestamp with time zone,
+    last_login_at timestamp with time zone,
+    CONSTRAINT chk_users_email_format CHECK ((((email)::text = lower((email)::text)) AND ((email)::text ~~ '%_@_%._%'::text))),
+    CONSTRAINT chk_users_role CHECK (((role)::text = ANY ((ARRAY['gezgin'::character varying, 'yonetici'::character varying])::text[])))
 );
 
 --
@@ -385,6 +403,13 @@ ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (name);
 
 --
+-- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+--
 -- Name: trips trips_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -451,6 +476,18 @@ CREATE INDEX idx_pois_interest ON public.pois USING btree (interest_id);
 CREATE INDEX idx_pois_name_lower ON public.pois USING btree (lower((name)::text) text_pattern_ops);
 
 --
+-- Name: idx_sessions_expires; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_sessions_expires ON public.sessions USING btree (expires_at);
+
+--
+-- Name: idx_sessions_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_sessions_user ON public.sessions USING btree (user_id);
+
+--
 -- Name: idx_trips_city; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -510,6 +547,13 @@ ALTER TABLE ONLY public.pois
     ADD CONSTRAINT pois_interest_id_fkey FOREIGN KEY (interest_id) REFERENCES public.interests(id);
 
 --
+-- Name: sessions sessions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+--
 -- Name: trips trips_city_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -547,5 +591,4 @@ ALTER TABLE ONLY public.user_preferences
 --
 -- PostgreSQL database dump complete
 --
-
 

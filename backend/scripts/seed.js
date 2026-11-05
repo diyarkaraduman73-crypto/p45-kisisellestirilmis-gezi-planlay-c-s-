@@ -27,7 +27,7 @@ const sample = (arr, n) => [...arr].sort(() => rand() - 0.5).slice(0, n);
 try {
   if (process.argv.includes('--reset')) {
     await pool.query(`TRUNCATE day_plan_items, day_plans, trips, user_interests, user_preferences,
-                      users, pois, interests, cities RESTART IDENTITY CASCADE`);
+                      sessions, users, pois, interests, cities RESTART IDENTITY CASCADE`);
     console.log('Tablolar boşaltıldı.');
   }
 
@@ -62,7 +62,16 @@ try {
   const slugs = INTERESTS.map((i) => i.slug);
   let tripCount = 0;
 
-  // 2) Sentetik kullanıcılar + rotalar (CRUD fonksiyonları üzerinden)
+  // 2) Yönetici hesabı (sentetik) — yönetim paneli demosu için
+  await userRepository.create({
+    fullName: 'Deneme Yönetici',
+    email: 'yonetici@example.com',
+    passwordHash,
+    role: 'yonetici',
+    interestSlugs: ['tarih'],
+  });
+
+  // 3) Sentetik gezgin kullanıcılar + rotalar (CRUD fonksiyonları üzerinden)
   for (let n = 1; n <= USER_COUNT; n++) {
     const no = String(n).padStart(2, '0');
     const interests = sample(slugs, 2 + Math.floor(rand() * 3));
@@ -97,7 +106,8 @@ try {
       tripCount++;
     }
   }
-  console.log(`✔ ${USER_COUNT} sentetik kullanıcı, ${tripCount} rota (şifre: ${DEMO_PASSWORD})`);
+  console.log(`✔ 1 yönetici (yonetici@example.com), ${USER_COUNT} gezgin (kullanici01..${String(USER_COUNT).padStart(2, '0')}@example.com), ${tripCount} rota`);
+  console.log(`  Tüm demo hesapların parolası: ${DEMO_PASSWORD}`);
 } catch (err) {
   console.error('Seed başarısız:', err.message);
   process.exitCode = 1;
