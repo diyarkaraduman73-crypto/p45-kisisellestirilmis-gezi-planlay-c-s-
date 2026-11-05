@@ -1,13 +1,15 @@
 {
   "name": "gezi-planlayici-backend",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "P45 Kişiselleştirilmiş Gezi Planlayıcı - REST API",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "db:init": "node scripts/initDb.js"
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed": "node scripts/seed.js",
+    "db:setup": "node scripts/migrate.js && node scripts/seed.js"
   },
   "engines": {
     "node": ">=18"

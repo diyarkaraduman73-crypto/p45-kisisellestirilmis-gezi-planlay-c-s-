@@ -27,14 +27,17 @@
 │       ├── components/       Tekrar kullanılabilir bileşenler (form, harita)
 │       └── services/         Backend API istemcisi
 ├── backend/                  REST API (Render'da yayınlanır)
-│   ├── db/schema.sql         Veritabanı şeması (3NF)
-│   ├── scripts/initDb.js     Tabloları oluşturur + örnek veri yükler
+│   ├── db/migrations/        Sıralı şema değişiklikleri (001_, 002_, ...)
+│   ├── db/schema.sql         Güncel şemanın tam dökümü (otomatik üretilir)
+│   ├── db/ornek-sorgular.sql Demo sorguları (JOIN, EXPLAIN, transaction)
+│   ├── scripts/              migrate.js, seed.js (sentetik veri)
 │   └── src/
 │       ├── routes/           SUNUM: URL eşlemeleri
 │       ├── controllers/      SUNUM: istek/yanıt
 │       ├── services/         İŞ: kurallar, doğrulama
 │       ├── repositories/     VERİ: SQL erişimi
 │       ├── middleware/       Hata yönetimi
+│       ├── utils/            Doğrulama, şifre özetleme, hata sınıfları
 │       ├── config/           Veritabanı bağlantısı
 │       └── data/seed.js      Başlangıç verisi
 └── docs/                     Mimari, ER diyagramı, haftalık raporlar
@@ -60,20 +63,36 @@ npm install
 npm run dev                 # http://localhost:5173
 ```
 
-Veritabanı ile çalışmak için Neon'da ücretsiz proje açın, bağlantı adresini `backend/.env` içindeki `DATABASE_URL`'e yazın ve `npm run db:init` çalıştırın.
+Veritabanı ile çalışmak için Neon'da ücretsiz proje açın, bağlantı adresini `backend/.env` içindeki `DATABASE_URL`'e yazın ve `npm run db:setup` çalıştırın (migration'lar + sentetik örnek veri).
 
-## API (şu anki)
+### Veritabanı komutları (backend klasöründe)
+
+| Komut | Ne yapar |
+|---|---|
+| `npm run db:migrate` | Henüz uygulanmamış migration'ları sırayla uygular |
+| `npm run db:seed` | Sentetik örnek veriyi yükler (`-- --reset` ile önce tabloları boşaltır) |
+| `npm run db:setup` | İkisini birlikte çalıştırır |
+
+## API
 
 | Metot | Yol | Açıklama |
 |---|---|---|
 | GET | `/api/health` | Sunucu ve veritabanı durumu |
-| GET | `/api/interests` | İlgi alanı listesi |
-| GET | `/api/pois?city=İstanbul&interests=tarih,doga` | POI kataloğu (filtreli) |
-| GET | `/api/pois/:id` | Tek POI |
+| GET | `/api/interests`, `/api/cities` | Referans listeleri |
+| GET / POST | `/api/pois` | POI listesi (`city`, `interests`, `q` filtreleri) / yeni POI |
+| GET / PATCH / DELETE | `/api/pois/:id` | Tek POI |
+| GET / POST | `/api/users` | Kullanıcı listesi (sayfalı) / yeni kullanıcı |
+| GET / PATCH / DELETE | `/api/users/:id` | Tek kullanıcı (tercih ve ilgileriyle) |
+| GET | `/api/users/:id/trips` | Kullanıcının rotaları |
+| POST | `/api/trips` | Rota + gün planları + duraklar (tek transaction) |
+| GET / PATCH / DELETE | `/api/trips/:id` | Tek rota (gün gün) |
+| GET | `/api/trips/shared/:code` | Paylaşım koduyla rota |
+
+Okuma uçları veritabanı olmadan da örnek veriyle çalışır; kullanıcı ve rota işlemleri veritabanı gerektirir.
 
 ## Ücretsiz yayınlama
 
-1. **Neon:** Proje oluştur → bağlantı adresini kopyala → yerelde `npm run db:init`.
+1. **Neon:** Proje oluştur → bağlantı adresini kopyala → yerelde `npm run db:setup`.
 2. **Render:** New → Web Service → bu depo → *Root Directory* `backend`, *Build* `npm install`, *Start* `npm start`, plan **Free**. Ortam değişkenleri: `DATABASE_URL`, `CORS_ORIGIN` (Vercel adresin).
 3. **Vercel:** New Project → bu depo → *Root Directory* `frontend` (Vite otomatik algılanır). Ortam değişkeni: `VITE_API_URL` = Render adresin.
 
@@ -84,5 +103,6 @@ Veritabanı ile çalışmak için Neon'da ücretsiz proje açın, bağlantı adr
 | Hafta | Konu | Rapor |
 |---|---|---|
 | 3 | Kurulum, mimari ve veri modeli | [hafta-3.md](docs/haftalar/hafta-3.md) |
+| 4 | Veritabanı tasarımı ve veri erişim katmanı | [hafta-4.md](docs/haftalar/hafta-4.md) |
 
 Güncel kod `main` dalındadır; her haftanın teslim edilen son hali ayrıca `hafta-N` dalında saklanır.

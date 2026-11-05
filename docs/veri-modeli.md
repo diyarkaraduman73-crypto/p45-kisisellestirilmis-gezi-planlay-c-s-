@@ -1,6 +1,6 @@
 # Veri Modeli ve ER Diyagramı
 
-Fiziksel şema: [`backend/db/schema.sql`](../backend/db/schema.sql)
+Şema migration'larla kurulur: [`backend/db/migrations/`](../backend/db/migrations/) · Güncel tam döküm: [`backend/db/schema.sql`](../backend/db/schema.sql)
 
 ## ER diyagramı
 
@@ -64,6 +64,7 @@ erDiagram
         smallint day_count "1-14"
         varchar share_code UK
         timestamptz created_at
+        timestamptz updated_at
     }
     DAY_PLANS {
         int id PK

@@ -1,5 +1,5 @@
 // Başlangıç (seed) verileri: ilgi alanları, şehirler ve örnek POI kataloğu.
-// Veritabanı bağlı değilken API bu verilerle çalışır; scripts/initDb.js bunları veritabanına yükler.
+// Veritabanı bağlı değilken API bu verilerle çalışır; scripts/seed.js bunları veritabanına yükler.
 // visit_minutes: önerilen ziyaret süresi (dk), price_level: 0 = ücretsiz ... 3 = pahalı
 
 export const CITIES = [{ id: 1, name: 'İstanbul', country: 'Türkiye' }];

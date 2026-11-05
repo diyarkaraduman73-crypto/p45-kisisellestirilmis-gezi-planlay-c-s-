@@ -42,7 +42,7 @@ flowchart LR
 |---|---|---|---|
 | **Sunum (API)** | `backend/src/routes`, `backend/src/controllers` | URL'i karşılar, istek parametrelerini okur, JSON yanıt ve HTTP durum kodu döner | İş kuralı içermez, SQL yazmaz |
 | **İş (servis)** | `backend/src/services` | Doğrulama, iş kuralları (ör. geçersiz ilgi alanı reddi), ileride rota üretimi ve yapay zekâ çağrısı | HTTP'yi (`req/res`) ve SQL'i bilmez |
-| **Veri (repository)** | `backend/src/repositories`, `backend/src/config/db.js` | Veritabanına SQL ile erişir; DB yoksa seed verisinden okur | İş kuralı içermez |
+| **Veri (repository)** | `backend/src/repositories`, `backend/src/config/db.js` | Parametreli SQL ile CRUD, transaction (`withTransaction`); DB yoksa okumalar seed verisinden | İş kuralı içermez |
 | **Sunum (arayüz)** | `frontend/src/pages`, `frontend/src/components` | Ekranlar ve tekrar kullanılabilir bileşenler | Doğrudan `fetch` yapmaz |
 | **İstemci servis** | `frontend/src/services` | Backend ile tüm iletişim | Arayüz çizmez |
 
