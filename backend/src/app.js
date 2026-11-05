@@ -8,7 +8,11 @@ import { securityHeaders } from './middleware/security.js';
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1); // Render bir proxy arkasında çalışır
-const origins = (process.env.CORS_ORIGIN || '*').split(',').map((s) => s.trim());
+// CORS: izin verilen site adresleri. Sondaki "/" ve boşluklar yok sayılır (sık yapılan ayar hatası).
+const origins = (process.env.CORS_ORIGIN || '*')
+  .split(',')
+  .map((s) => s.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
 
 app.use(cors({ origin: origins.includes('*') ? true : origins }));
 app.use(securityHeaders);

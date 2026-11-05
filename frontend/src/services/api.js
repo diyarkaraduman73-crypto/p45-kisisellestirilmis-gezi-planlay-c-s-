@@ -24,7 +24,13 @@ async function request(path, { method = 'GET', body } = {}) {
   const token = tokenStore.get();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  let res;
+  try {
+    res = await fetch(`${API_URL}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  } catch {
+    // Ağ hatası: sunucu uyuyor/kapalı, adres yanlış veya CORS izni yok
+    throw new Error(`Sunucuya ulaşılamadı (${API_URL}). Sunucu uykudan uyanıyor olabilir; 1 dakika sonra sayfayı yenileyin.`);
+  }
   if (res.status === 204) return null;
   const data = await res.json().catch(() => ({}));
 
