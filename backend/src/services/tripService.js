@@ -27,6 +27,7 @@ async function parseDays(days, dayCount) {
     const items = (d.items || []).map((it) => {
       const poiId = toId(it.poiId, 'POI kimliği');
       if (it.startTime && !TIME_RE.test(it.startTime)) throw new ValidationError('Saat SS:DD biçiminde olmalı');
+      if (poiIds.has(poiId)) throw new ValidationError(`POI #${poiId} rotada birden fazla kez var`); // Rota modülü R4
       poiIds.add(poiId);
       return { poiId, startTime: it.startTime, note: it.note };
     });
@@ -81,9 +82,9 @@ export async function getTrip(actor, rawId) {
 
 // Paylaşım bağlantısı herkese açık: kodu bilen görüntüleyebilir (yalnızca okuma)
 export async function getTripByShareCode(code) {
-  const trip = await tripRepository.findByShareCode(String(code));
-  if (!trip) throw new NotFoundError('Rota bulunamadı');
-  const { user_id, ...publicTrip } = trip; // sahibin kimliği paylaşılmaz
+  const trip = await tripRepository.findPublicByShareCode(String(code));
+  if (!trip) throw new NotFoundError('Rota bulunamadı veya paylaşıma kapalı');
+  const { user_id, start_lat, start_lng, share_code, ...publicTrip } = trip; // sahip ve başlangıç (ör. otel) konumu paylaşılmaz
   return publicTrip;
 }
 
@@ -105,4 +106,16 @@ export async function updateTrip(actor, rawId, body) {
 export async function deleteTrip(actor, rawId) {
   const trip = await loadOwned(actor, rawId);
   await tripRepository.remove(trip.id);
+}
+
+// PAYLAŞ: yalnızca sahibi (veya yönetici). isPublic=false → bağlantı çalışmaz.
+// regenerate=true → yeni kod üretilir, eski bağlantı kalıcı olarak geçersiz olur.
+export async function shareTrip(actor, rawId, body = {}) {
+  const trip = await loadOwned(actor, rawId);
+  if (typeof body.isPublic !== 'boolean') throw new ValidationError('isPublic true veya false olmalı');
+  const updated = await tripRepository.setSharing(trip.id, {
+    isPublic: body.isPublic,
+    newCode: body.regenerate === true ? randomBytes(9).toString('base64url') : undefined,
+  });
+  return { id: updated.id, isPublic: updated.is_public, shareCode: updated.is_public ? updated.share_code : null };
 }

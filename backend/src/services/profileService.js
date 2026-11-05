@@ -64,43 +64,52 @@ export async function updateProfile(actor, body = {}) {
   return toProfile(user, all);
 }
 
-// ENTEGRASYON: profil + katalog → kişiye göre sıralanmış POI listesi.
-// Puan (0–100): ilgi düzeyi × 20, bütçeyi aşıyorsa −30, konum verildiyse uzaklık başına −2 (en fazla −20).
+// Profil + POI listesi → her POI'ye 0–100 puan ve gerekçe ekler (planlayıcı da kullanır).
+// Puan: ilgi düzeyi × 20, bütçeyi aşıyorsa −30, distance_km varsa uzaklık başına −2 (en fazla −20).
+export function scoreForProfile(profile, pois) {
+  const byInterest = Object.fromEntries(profile.interests.map((i) => [i.slug, i]));
+  const maxPrice = BUDGET_MAX_PRICE[profile.budget];
+  return pois.map((p) => {
+    const interest = byInterest[p.interest];
+    const reasons = [];
+    let score = 0;
+    if (interest) {
+      score = interest.weight * 20;
+      reasons.push(`${interest.name} ilgin: ${interest.weight}/5`);
+    } else {
+      reasons.push('ilgi alanların dışında');
+    }
+    if (p.price_level > maxPrice) {
+      score -= 30;
+      reasons.push('bütçenin üstünde');
+    } else {
+      reasons.push('bütçene uygun');
+    }
+    if (p.distance_km !== undefined) {
+      score -= Math.min(20, Math.round(p.distance_km * 2));
+      reasons.push(`${p.distance_km} km uzakta`);
+    }
+    return { ...p, score: Math.max(0, score), reasons };
+  });
+}
+
+// ENTEGRASYON: profil + katalog → kişiye göre sıralanmış POI listesi
 export async function recommendPois(actor, query = {}) {
   const profile = await getProfile(actor);
   if (!profile.interests.length) {
     throw new ValidationError('Öneri için önce profilinizde en az bir ilgi alanı seçin');
   }
-  const weightOf = Object.fromEntries(profile.interests.map((i) => [i.slug, i]));
-  const maxPrice = BUDGET_MAX_PRICE[profile.budget];
-
   const lat = query.lat !== undefined ? Number(query.lat) : undefined;
   const lng = query.lng !== undefined ? Number(query.lng) : undefined;
   const near = Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng, radiusKm: 50 } : undefined;
 
   const pois = await poiRepository.findMany({
     city: query.city || 'İstanbul',
-    interests: Object.keys(weightOf),
+    interests: profile.interests.map((i) => i.slug),
     near,
   });
 
-  return pois
-    .map((p) => {
-      const interest = weightOf[p.interest];
-      const reasons = [`${interest.name} ilgin: ${interest.weight}/5`];
-      let score = interest.weight * 20;
-      if (p.price_level > maxPrice) {
-        score -= 30;
-        reasons.push('bütçenin üstünde');
-      } else {
-        reasons.push('bütçene uygun');
-      }
-      if (p.distance_km !== undefined) {
-        score -= Math.min(20, Math.round(p.distance_km * 2));
-        reasons.push(`${p.distance_km} km uzakta`);
-      }
-      return { ...p, score: Math.max(0, score), reasons };
-    })
+  return scoreForProfile(profile, pois)
     .sort((a, b) => b.score - a.score || (a.distance_km ?? 0) - (b.distance_km ?? 0) || a.name.localeCompare(b.name, 'tr'))
     .slice(0, Math.min(Number(query.limit) || 20, 50));
 }

@@ -8,10 +8,19 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import MyTripsPage from './pages/MyTripsPage.jsx';
 import AdminPage from './pages/AdminPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import PlannerPage from './pages/PlannerPage.jsx';
+import TripDetailPage from './pages/TripDetailPage.jsx';
+import SharedTripPage from './pages/SharedTripPage.jsx';
 
 // Sayfa → erişim kuralı tablosu
 function Router() {
   const { path } = useRoute();
+  // Parametreli sayfalar: #/rota/12, #/paylasim/AbC123
+  const [, section, param] = path.split('/');
+  if (section === 'rota' && param) {
+    return <ProtectedRoute roles={['gezgin', 'yonetici']}><TripDetailPage id={param} /></ProtectedRoute>;
+  }
+  if (section === 'paylasim' && param) return <SharedTripPage code={param} />; // herkese açık
   switch (path) {
     case '/giris':
       return <LoginPage />;
@@ -19,6 +28,8 @@ function Router() {
       return <RegisterPage />;
     case '/rotalarim':
       return <ProtectedRoute roles={['gezgin', 'yonetici']}><MyTripsPage /></ProtectedRoute>;
+    case '/planla':
+      return <ProtectedRoute roles={['gezgin', 'yonetici']}><PlannerPage /></ProtectedRoute>;
     case '/profil':
       return <ProtectedRoute roles={['gezgin', 'yonetici']}><ProfilePage /></ProtectedRoute>;
     case '/yonetim':

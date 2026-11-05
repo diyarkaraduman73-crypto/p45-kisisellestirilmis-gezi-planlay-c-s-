@@ -23,7 +23,7 @@
 ```
 ├── frontend/                 React arayüzü (Vercel'de yayınlanır)
 │   └── src/
-│       ├── pages/            Sayfalar (Keşfet, Giriş, Kayıt, Profilim, Rotalarım, Yönetim)
+│       ├── pages/            Sayfalar (Keşfet, Planla, Rota, Paylaşım, Giriş, Kayıt, Profilim, Rotalarım, Yönetim)
 │       ├── auth/             Oturum durumu (AuthContext)
 │       ├── components/       Tekrar kullanılabilir bileşenler (form, harita)
 │       └── services/         Backend API istemcisi
@@ -104,9 +104,12 @@ Veritabanı ile çalışmak için Neon'da ücretsiz proje açın, bağlantı adr
 | GET / PATCH / DELETE | `/api/users/:id` | 👤 | Profil (tercih ve ilgileriyle) |
 | PATCH | `/api/users/:id/role` | 🛡️ | Rol değiştirme |
 | GET | `/api/users/:id/trips` | 👤 | Kullanıcının rotaları |
-| POST | `/api/trips` | 🔑 | Rota + gün planları + duraklar (giriş yapan adına) |
+| POST | `/api/trips/plan` | 🔑 | Gün gün rota **önizlemesi** (ilgi profili + süre/mesafe kısıtları) |
+| POST | `/api/trips/generate` | 🔑 | Rota üret ve kaydet |
+| POST | `/api/trips` | 🔑 | Elle rota (giriş yapan adına) |
 | GET / PATCH / DELETE | `/api/trips/:id` | 👤 | Rota (sahibi veya yönetici) |
-| GET | `/api/trips/shared/:code` | 🔓 | Paylaşım koduyla rota |
+| POST | `/api/trips/:id/share` | 👤 | Paylaşımı aç/kapat, bağlantıyı yenile |
+| GET | `/api/trips/shared/:code` | 🔓 | Paylaşılan rota (yalnızca paylaşım açıksa) |
 
 Korumalı uçlara `Authorization: Bearer <token>` başlığıyla istek atılır. Ayrıntılar: [Güvenlik notu](docs/guvenlik-notu.md)
 
@@ -126,5 +129,6 @@ Korumalı uçlara `Authorization: Bearer <token>` başlığıyla istek atılır.
 | 4 | Veritabanı tasarımı ve veri erişim katmanı | [hafta-4.md](docs/haftalar/hafta-4.md) |
 | 5 | Kullanıcı yönetimi ve kimlik doğrulama | [hafta-5.md](docs/haftalar/hafta-5.md) |
 | 6 | Çekirdek Modül A: POI Kataloğu ve İlgi Profili | [hafta-6.md](docs/haftalar/hafta-6.md) · [modül açıklaması](docs/moduller/poi-katalogu-ilgi-profili.md) |
+| 7 | Çekirdek Modül B: Rota ve Gün Planı Üretimi | [hafta-7.md](docs/haftalar/hafta-7.md) · [modül açıklaması](docs/moduller/rota-gun-plani.md) |
 
 Güncel kod `main` dalındadır; her haftanın teslim edilen son hali ayrıca `hafta-N` dalında saklanır.

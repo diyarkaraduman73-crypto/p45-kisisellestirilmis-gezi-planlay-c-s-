@@ -1,5 +1,6 @@
 // SUNUM KATMANI (API): rotalar
 import * as tripService from '../services/tripService.js';
+import * as routePlanService from '../services/routePlanService.js';
 
 export const get = async (req, res) => res.json(await tripService.getTrip(req.actor, req.params.id));
 export const getShared = async (req, res) => res.json(await tripService.getTripByShareCode(req.params.code));
@@ -9,3 +10,6 @@ export const remove = async (req, res) => {
   await tripService.deleteTrip(req.actor, req.params.id);
   res.status(204).end();
 };
+export const share = async (req, res) => res.json(await tripService.shareTrip(req.actor, req.params.id, req.body || {}));
+export const plan = async (req, res) => res.json(await routePlanService.previewPlan(req.actor, req.body || {}));
+export const generate = async (req, res) => res.status(201).json(await routePlanService.generateAndSave(req.actor, req.body || {}));

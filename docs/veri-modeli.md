@@ -95,6 +95,13 @@ erDiagram
         date start_date
         smallint day_count "1-14"
         varchar share_code UK
+        bool is_public
+        bool generated
+        varchar pace
+        time day_start
+        time day_end
+        float start_lat
+        float start_lng
         timestamptz created_at
         timestamptz updated_at
     }
@@ -110,6 +117,10 @@ erDiagram
         int poi_id FK
         smallint visit_order
         time start_time
+        time end_time
+        smallint travel_minutes
+        numeric travel_km
+        varchar travel_mode
         text note
     }
 ```
@@ -121,8 +132,8 @@ erDiagram
 | **Kullanıcı** | `users`, `user_preferences`, `sessions` | Gezgin/yönetici, tercihler ve açık oturumlar (Hafta 5) |
 | **İlgi** | `interests`, `user_interests` | İlgi alanı kataloğu ve kullanıcının seçtikleri |
 | **POI** | `pois`, `cities`, `tags`, `poi_tags` | Gezilecek noktalar, şehir (merkez + yarıçap), etiketler (Hafta 6) |
-| **Rota** | `trips` | Kullanıcının bir şehir için oluşturduğu gezi; paylaşım kodu taşır |
-| **Gün planı** | `day_plans`, `day_plan_items` | Rotanın her günü ve o günün sıralı durakları |
+| **Rota** | `trips` | Kullanıcının bir şehir için oluşturduğu gezi; üretim parametreleri ve paylaşım ayarı (Hafta 7) |
+| **Gün planı** | `day_plans`, `day_plan_items` | Rotanın her günü; sıralı, saatli duraklar ve önceki noktadan yol süresi/mesafesi (Hafta 7) |
 
 ## İlişki türleri
 

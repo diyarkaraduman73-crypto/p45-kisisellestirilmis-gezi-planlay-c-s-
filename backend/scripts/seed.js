@@ -108,7 +108,7 @@ try {
         items: candidates.slice(d * 3, d * 3 + 3).map((p, k) => ({ poiId: p.id, startTime: `${String(9 + k * 3).padStart(2, '0')}:00` })),
       }));
       const start = new Date(Date.UTC(2026, 11, 1 + Math.floor(rand() * 60)));
-      await tripRepository.create({
+      const trip = await tripRepository.create({
         userId: user.id,
         cityId,
         title: `İstanbul gezisi #${t}`,
@@ -117,6 +117,8 @@ try {
         shareCode: `demo${no}${t}`,
         days,
       });
+      // Paylaşım demosu: ilk kullanıcının ilk rotası herkese açık → #/paylasim/demo011
+      if (n === 1 && t === 1) await tripRepository.setSharing(trip.id, { isPublic: true });
       tripCount++;
     }
   }

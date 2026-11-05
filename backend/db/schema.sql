@@ -61,6 +61,12 @@ CREATE TABLE public.day_plan_items (
     visit_order smallint NOT NULL,
     start_time time without time zone,
     note text,
+    end_time time without time zone,
+    travel_minutes smallint,
+    travel_km numeric(6,2),
+    travel_mode character varying(15),
+    CONSTRAINT chk_items_time_order CHECK (((start_time IS NULL) OR (end_time IS NULL) OR (end_time > start_time))),
+    CONSTRAINT chk_items_travel CHECK ((((travel_minutes IS NULL) OR (travel_minutes >= 0)) AND ((travel_km IS NULL) OR (travel_km >= (0)::numeric)) AND ((travel_mode IS NULL) OR ((travel_mode)::text = ANY ((ARRAY['yuruyus'::character varying, 'toplu-tasima'::character varying])::text[]))))),
     CONSTRAINT day_plan_items_visit_order_check CHECK ((visit_order >= 1))
 );
 
@@ -259,6 +265,16 @@ CREATE TABLE public.trips (
     share_code character varying(12),
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    pace character varying(10),
+    day_start time without time zone,
+    day_end time without time zone,
+    start_lat double precision,
+    start_lng double precision,
+    generated boolean DEFAULT false NOT NULL,
+    is_public boolean DEFAULT false NOT NULL,
+    CONSTRAINT chk_trips_day_window CHECK (((day_start IS NULL) OR (day_end IS NULL) OR (day_end >= (day_start + '03:00:00'::interval)))),
+    CONSTRAINT chk_trips_pace CHECK (((pace IS NULL) OR ((pace)::text = ANY ((ARRAY['sakin'::character varying, 'normal'::character varying, 'yogun'::character varying])::text[])))),
+    CONSTRAINT chk_trips_start_point CHECK (((start_lat IS NULL) = (start_lng IS NULL))),
     CONSTRAINT trips_day_count_check CHECK (((day_count >= 1) AND (day_count <= 14)))
 );
 
@@ -589,6 +605,12 @@ CREATE INDEX idx_sessions_user ON public.sessions USING btree (user_id);
 CREATE INDEX idx_trips_city ON public.trips USING btree (city_id);
 
 --
+-- Name: idx_trips_public_share; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_trips_public_share ON public.trips USING btree (share_code) WHERE is_public;
+
+--
 -- Name: idx_trips_user_created; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -599,6 +621,12 @@ CREATE INDEX idx_trips_user_created ON public.trips USING btree (user_id, create
 --
 
 CREATE INDEX idx_user_interests_interest ON public.user_interests USING btree (interest_id);
+
+--
+-- Name: uq_items_day_poi; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_items_day_poi ON public.day_plan_items USING btree (day_plan_id, poi_id);
 
 --
 -- Name: uq_pois_city_name; Type: INDEX; Schema: public; Owner: -

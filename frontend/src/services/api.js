@@ -65,6 +65,12 @@ export const api = {
   myTrips: (userId) => request(`/api/users/${userId}/trips`),
   trip: (id) => request(`/api/trips/${id}`),
   deleteTrip: (id) => request(`/api/trips/${id}`, { method: 'DELETE' }),
+  // rota üretimi
+  planTrip: (params) => request('/api/trips/plan', { method: 'POST', body: params }),
+  generateTrip: (params) => request('/api/trips/generate', { method: 'POST', body: params }),
+  shareTrip: (id, isPublic, regenerate = false) =>
+    request(`/api/trips/${id}/share`, { method: 'POST', body: { isPublic, regenerate } }),
+  sharedTrip: (code) => request(`/api/trips/shared/${encodeURIComponent(code)}`),
 
   // yönetici
   users: () => request('/api/users?limit=100'),
