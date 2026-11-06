@@ -1,7 +1,7 @@
 # Hafta 7 · Çekirdek Modül B: Rota ve Gün Planı Üretimi + Entegrasyon
 
 **Amaç:** İlgi ve süreye göre gün planı üreten modülü geliştirmek.
-**Modül:** Rota ve Gün Planı Üretimi — ayrıntılı açıklama: [docs/moduller/rota-gun-plani.md](../moduller/rota-gun-plani.md)
+**Modül:** Rota ve Gün Planı Üretimi — ayrıntılı açıklama: [docs/moduller/rota-gun-plani.md](../../moduller/rota-gun-plani.md)
 
 ## Yapılanlar
 
@@ -19,7 +19,7 @@
 |---|---|
 | Çalışan Rota ve Gün Planı Üretimi | `backend/src/services/planner.js`, `routePlanService.js`; arayüzde **Planla** |
 | İlgili kod | `tripService.js` (paylaşım), `tripRepository.js`, migration `006`, `frontend/src/pages/PlannerPage.jsx`, `TripDetailPage.jsx`, `SharedTripPage.jsx`, `components/RouteMap.jsx`, `DayTimeline.jsx` |
-| Kısa açıklama | [docs/moduller/rota-gun-plani.md](../moduller/rota-gun-plani.md) |
+| Kısa açıklama | [docs/moduller/rota-gun-plani.md](../../moduller/rota-gun-plani.md) |
 
 ## Test sonuçları
 

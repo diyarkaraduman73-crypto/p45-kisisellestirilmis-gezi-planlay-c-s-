@@ -1,5 +1,7 @@
 # 🧭 P45 · Kişiselleştirilmiş Gezi Planlayıcı
 
+**Öğrenci:** Diyar Karaduman · **Numara:** 251161035
+
 İlgi alanına, süresine ve konumuna göre **gün gün kişiselleştirilmiş gezi rotası** üreten web uygulaması.
 
 | | |
@@ -125,10 +127,10 @@ Korumalı uçlara `Authorization: Bearer <token>` başlığıyla istek atılır.
 
 | Hafta | Konu | Rapor |
 |---|---|---|
-| 3 | Kurulum, mimari ve veri modeli | [hafta-3.md](docs/haftalar/hafta-3.md) |
-| 4 | Veritabanı tasarımı ve veri erişim katmanı | [hafta-4.md](docs/haftalar/hafta-4.md) |
-| 5 | Kullanıcı yönetimi ve kimlik doğrulama | [hafta-5.md](docs/haftalar/hafta-5.md) |
-| 6 | Çekirdek Modül A: POI Kataloğu ve İlgi Profili | [hafta-6.md](docs/haftalar/hafta-6.md) · [modül açıklaması](docs/moduller/poi-katalogu-ilgi-profili.md) |
-| 7 | Çekirdek Modül B: Rota ve Gün Planı Üretimi | [hafta-7.md](docs/haftalar/hafta-7.md) · [modül açıklaması](docs/moduller/rota-gun-plani.md) |
+| 3 | Kurulum, mimari ve veri modeli | [rapor](docs/haftalar/hafta-3/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-3/yapay-zeka-gunlugu.md) |
+| 4 | Veritabanı tasarımı ve veri erişim katmanı | [rapor](docs/haftalar/hafta-4/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-4/yapay-zeka-gunlugu.md) |
+| 5 | Kullanıcı yönetimi ve kimlik doğrulama | [rapor](docs/haftalar/hafta-5/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-5/yapay-zeka-gunlugu.md) |
+| 6 | Çekirdek Modül A: POI Kataloğu ve İlgi Profili | [rapor](docs/haftalar/hafta-6/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-6/yapay-zeka-gunlugu.md) · [modül açıklaması](docs/moduller/poi-katalogu-ilgi-profili.md) |
+| 7 | Çekirdek Modül B: Rota ve Gün Planı Üretimi | [rapor](docs/haftalar/hafta-7/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-7/yapay-zeka-gunlugu.md) · [modül açıklaması](docs/moduller/rota-gun-plani.md) |
 
-Güncel kod `main` dalındadır; her haftanın teslim edilen son hali ayrıca `hafta-N` dalında saklanır.
+Her haftanın raporu ve yapay zekâ kullanım günlüğü `docs/haftalar/hafta-N/` klasöründedir. Güncel kod `main` dalındadır; her haftanın teslim edilen son hali ayrıca `hafta-N` dalında saklanır.

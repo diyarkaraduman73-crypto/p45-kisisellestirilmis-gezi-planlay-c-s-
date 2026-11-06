@@ -1,7 +1,7 @@
 # Hafta 6 · Çekirdek Modül A: POI Kataloğu ve İlgi Profili
 
 **Amaç:** İlgi noktaları kataloğu ve kullanıcı ilgi profilini yöneten modülü geliştirmek.
-**Modül:** POI Kataloğu ve İlgi Profili — ayrıntılı açıklama: [docs/moduller/poi-katalogu-ilgi-profili.md](../moduller/poi-katalogu-ilgi-profili.md)
+**Modül:** POI Kataloğu ve İlgi Profili — ayrıntılı açıklama: [docs/moduller/poi-katalogu-ilgi-profili.md](../../moduller/poi-katalogu-ilgi-profili.md)
 
 ## Yapılanlar
 
@@ -19,7 +19,7 @@
 |---|---|
 | Çalışan POI Kataloğu ve İlgi Profili | `backend/src/services/poiService.js`, `profileService.js`, `tagService.js`; arayüzde Keşfet, Profilim, Yönetim |
 | İlgili kod | `backend/db/migrations/005_poi_catalog_interest_profile.sql`, `repositories/poiRepository.js`, `tagRepository.js`, `utils/geo.js` |
-| Kısa açıklama | [docs/moduller/poi-katalogu-ilgi-profili.md](../moduller/poi-katalogu-ilgi-profili.md) |
+| Kısa açıklama | [docs/moduller/poi-katalogu-ilgi-profili.md](../../moduller/poi-katalogu-ilgi-profili.md) |
 
 ## Test sonuçları
 

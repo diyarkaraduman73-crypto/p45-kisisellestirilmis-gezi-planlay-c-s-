@@ -8,8 +8,8 @@
 - [x] Teknoloji yığını seçildi ve kuruldu: Node.js 18+, Express, PostgreSQL (Neon), React + Vite, Leaflet/OpenStreetMap
 - [x] Katmanlı klasör yapısı: `frontend/` ve `backend/` ayrı; backend'de routes/controllers → services → repositories
 - [x] GitHub deposu, `.gitignore`, `README.md`, `.env.example` dosyaları
-- [x] ER diyagramı (kullanıcı, ilgi, POI, rota, gün planı) → [veri-modeli.md](../veri-modeli.md)
-- [x] Mimari şema → [mimari.md](../mimari.md)
+- [x] ER diyagramı (kullanıcı, ilgi, POI, rota, gün planı) → [veri-modeli.md](../../veri-modeli.md)
+- [x] Mimari şema → [mimari.md](../../mimari.md)
 - [x] Çalışan iskele: `/api/health`, `/api/interests`, `/api/pois`; arayüzde ilgi alanı seçimi ve POI haritası
 - [x] 3NF veritabanı şeması ve seed betiği (`npm run db:init`)
 

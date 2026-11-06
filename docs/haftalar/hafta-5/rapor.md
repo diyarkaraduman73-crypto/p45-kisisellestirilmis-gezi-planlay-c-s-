@@ -12,7 +12,7 @@
 - [x] **Başarısız giriş koruması:** 5 hatalı denemede 15 dk kilit, genel hata mesajı, sabit süreli doğrulama
 - [x] **Arayüz:** Giriş, Kayıt, Rotalarım (giriş gerekli), Yönetim paneli (yalnızca yönetici), 403 sayfası, oturum süresi dolunca otomatik çıkış
 - [x] Migration `004_auth_roles_sessions.sql`, seed'e yönetici hesabı
-- [x] [Güvenlik notu](../guvenlik-notu.md)
+- [x] [Güvenlik notu](../../guvenlik-notu.md)
 
 ## Teslim edilen çıktılar
 
@@ -91,7 +91,7 @@ Arayüzde: giriş yapmamışsa `#/giris?sonra=...` sayfasına yönlendirilir, gi
 - **Yetkilendirme (authorization):** "Bunu yapmaya iznin var mı?" → rol ve sahiplik. Başarısızsa 403.
 - **Hash ve salt:** Tek yönlü özet + kullanıcıya özel rastgele değer.
 - **JWT:** `başlık.içerik.imza`; içerik şifreli değil, base64 ile kodlanmış ve imzalı. İçine gizli bilgi konmaz.
-- **OWASP Top 10:** En yaygın web güvenlik açıkları listesi; eşleştirme için [güvenlik notu](../guvenlik-notu.md#5-owasp-top-10-ile-ilişki).
+- **OWASP Top 10:** En yaygın web güvenlik açıkları listesi; eşleştirme için [güvenlik notu](../../guvenlik-notu.md#5-owasp-top-10-ile-ilişki).
 
 ## Sık yapılan hatalar ve alınan önlem
 
