@@ -1,5 +1,6 @@
 // VERİ KATMANI: Kullanıcı CRUD'u (users + user_preferences + user_interests)
-import { requireDb, withTransaction } from '../config/db.js';
+import { requireDb, withTransaction, NOW } from '../config/db.js';
+import { removeAllForUser } from './tripRepository.js';
 
 // password_hash asla dışarı verilmez
 const USER_COLUMNS = 'u.id, u.full_name, u.email, u.role, u.created_at, u.last_login_at';
@@ -19,24 +20,31 @@ export async function create({ fullName, email, passwordHash, role = 'gezgin', p
   });
 }
 
-// READ (tek kayıt): tercih ve ilgi alanlarıyla birlikte
+// READ (tek kayıt): tercih ve ilgi alanlarıyla birlikte.
+// PostgreSQL'deki array_agg / json_object_agg yerine ilgi alanları ayrı sorguyla alınıp JS'te birleştirilir.
 export async function findById(id, db = requireDb()) {
   const { rows } = await db.query(
     `SELECT ${USER_COLUMNS},
             COALESCE(up.budget, 'orta')   AS budget,
             COALESCE(up.pace, 'normal')   AS pace,
-            COALESCE(up.language, 'tr')   AS language,
-            COALESCE(array_agg(i.slug ORDER BY i.slug) FILTER (WHERE i.slug IS NOT NULL), '{}') AS interests,
-            COALESCE(json_object_agg(i.slug, ui.weight) FILTER (WHERE i.slug IS NOT NULL), '{}'::json) AS interest_weights
+            COALESCE(up.language, 'tr')   AS language
      FROM users u
      LEFT JOIN user_preferences up ON up.user_id = u.id
-     LEFT JOIN user_interests ui   ON ui.user_id = u.id
-     LEFT JOIN interests i         ON i.id = ui.interest_id
-     WHERE u.id = $1
-     GROUP BY u.id, up.user_id`,
+     WHERE u.id = $1`,
     [id]
   );
-  return rows[0] || null;
+  const user = rows[0];
+  if (!user) return null;
+  const { rows: ints } = await db.query(
+    `SELECT i.slug, ui.weight FROM user_interests ui JOIN interests i ON i.id = ui.interest_id
+     WHERE ui.user_id = $1 ORDER BY i.slug`,
+    [id]
+  );
+  return {
+    ...user,
+    interests: ints.map((r) => r.slug),
+    interest_weights: Object.fromEntries(ints.map((r) => [r.slug, r.weight])),
+  };
 }
 
 // READ (liste, sayfalı)
@@ -68,10 +76,18 @@ export async function update(id, { fullName, email, preferences, interestSlugs }
   });
 }
 
-// DELETE: CASCADE sayesinde tercihler, ilgiler, rotalar ve gün planları da silinir.
+// DELETE: tercihler, ilgiler, oturumlar, rotalar ve gün planları aynı transaction'da silinir.
+// Kullanıcının eklediği POI'ler kalır, yalnızca "ekleyen" bilgisi boşaltılır (ON DELETE SET NULL karşılığı).
 export async function remove(id) {
-  const { rowCount } = await requireDb().query('DELETE FROM users WHERE id = $1', [id]);
-  return rowCount > 0;
+  return withTransaction(async (client) => {
+    await removeAllForUser(client, id);
+    await client.query('DELETE FROM user_interests WHERE user_id = $1', [id]);
+    await client.query('DELETE FROM user_preferences WHERE user_id = $1', [id]);
+    await client.query('DELETE FROM sessions WHERE user_id = $1', [id]);
+    await client.query('UPDATE pois SET created_by = NULL WHERE created_by = $1', [id]);
+    const { rowCount } = await client.query('DELETE FROM users WHERE id = $1', [id]);
+    return rowCount > 0;
+  });
 }
 
 // --- Kimlik doğrulama için (password_hash yalnızca burada okunur, servis dışına çıkmaz) ---
@@ -93,21 +109,21 @@ export async function findPasswordHash(id) {
 // Başarısız giriş: sayaç artar; eşiğe ulaşınca hesap kilitlenir ve sayaç sıfırlanır.
 // Tek UPDATE ifadesiyle yapılır, eş zamanlı isteklerde sayaç kaybolmaz.
 export async function recordFailedLogin(id, maxAttempts, lockMinutes) {
+  const lockUntil = new Date(Date.now() + lockMinutes * 60 * 1000);
   const { rows } = await requireDb().query(
     `UPDATE users SET
        failed_login_count = CASE WHEN failed_login_count + 1 >= $2 THEN 0 ELSE failed_login_count + 1 END,
-       locked_until       = CASE WHEN failed_login_count + 1 >= $2
-                                 THEN NOW() + make_interval(mins => $3) ELSE locked_until END
+       locked_until       = CASE WHEN failed_login_count + 1 >= $2 THEN $3 ELSE locked_until END
      WHERE id = $1
      RETURNING failed_login_count, locked_until`,
-    [id, maxAttempts, lockMinutes]
+    [id, maxAttempts, lockUntil]
   );
   return rows[0];
 }
 
 export async function recordSuccessfulLogin(id) {
   await requireDb().query(
-    `UPDATE users SET failed_login_count = 0, locked_until = NULL, last_login_at = NOW() WHERE id = $1`,
+    `UPDATE users SET failed_login_count = 0, locked_until = NULL, last_login_at = ${NOW} WHERE id = $1`,
     [id]
   );
 }
@@ -122,7 +138,7 @@ export async function updateRole(id, role) {
 }
 
 export async function countByRole(role) {
-  const { rows } = await requireDb().query('SELECT COUNT(*)::int AS n FROM users WHERE role = $1', [role]);
+  const { rows } = await requireDb().query('SELECT COUNT(*) AS n FROM users WHERE role = $1', [role]);
   return rows[0].n;
 }
 
@@ -144,11 +160,11 @@ async function replaceInterests(client, userId, list) {
   await client.query('DELETE FROM user_interests WHERE user_id = $1', [userId]);
   if (!list.length) return;
   const items = list.map((x) => (typeof x === 'string' ? { slug: x, weight: 3 } : x));
-  await client.query(
-    `INSERT INTO user_interests (user_id, interest_id, weight)
-     SELECT $1, i.id, x.weight
-     FROM unnest($2::text[], $3::int[]) AS x(slug, weight)
-     JOIN interests i ON i.slug = x.slug`,
-    [userId, items.map((x) => x.slug), items.map((x) => x.weight)]
-  );
+  for (const x of items) {
+    await client.query(
+      `INSERT INTO user_interests (user_id, interest_id, weight)
+       SELECT $1, i.id, $3 FROM interests i WHERE i.slug = $2`,
+      [userId, x.slug, x.weight]
+    );
+  }
 }

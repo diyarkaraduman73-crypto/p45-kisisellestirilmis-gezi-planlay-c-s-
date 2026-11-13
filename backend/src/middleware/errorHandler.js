@@ -2,7 +2,8 @@ export function notFound(_req, res) {
   res.status(404).json({ error: 'Bulunamadı' });
 }
 
-// PostgreSQL kısıt ihlallerini anlaşılır HTTP yanıtlarına çevirir.
+// Veritabanı kısıt ihlallerini anlaşılır HTTP yanıtlarına çevirir.
+// (Turso/SQLite hataları src/config/db.js içinde bu PostgreSQL kodlarına çevrilir.)
 const PG_ERRORS = {
   23505: [409, 'Bu kayıt zaten var (benzersizlik kısıtı)'],
   23503: [409, 'İlişkili kayıt bulunamadı veya kayıt başka bir yerde kullanılıyor (yabancı anahtar kısıtı)'],

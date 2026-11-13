@@ -11,7 +11,7 @@ import { asyncHandler as h } from '../middleware/asyncHandler.js';
 const router = Router();
 
 router.get('/health', (_req, res) => {
-  res.json({ status: 'ok', database: hasDb() ? 'postgres' : 'bellek (seed verisi)', time: new Date().toISOString() });
+  res.json({ status: 'ok', database: hasDb() ? 'turso' : 'bellek (seed verisi)', time: new Date().toISOString() });
 });
 router.get('/interests', h(poiController.listInterests));
 router.get('/cities', h(poiController.listCities));

@@ -11,7 +11,7 @@ import * as userRepository from '../src/repositories/userRepository.js';
 import * as tripRepository from '../src/repositories/tripRepository.js';
 
 if (!pool) {
-  console.error('DATABASE_URL tanımlı değil.');
+  console.error('TURSO_DATABASE_URL tanımlı değil.');
   process.exit(1);
 }
 
@@ -26,12 +26,17 @@ const sample = (arr, n) => [...arr].sort(() => rand() - 0.5).slice(0, n);
 
 try {
   if (process.argv.includes('--reset')) {
-    await pool.query(`TRUNCATE day_plan_items, day_plans, trips, user_interests, user_preferences,
-                      sessions, poi_tags, tags, users, pois, interests, cities RESTART IDENTITY CASCADE`);
+    // SQLite'ta TRUNCATE yok: çocuk tablolardan başlayarak sırayla silinir, sayaçlar sıfırlanır
+    const tables = ['day_plan_items', 'day_plans', 'trips', 'user_interests', 'user_preferences',
+      'sessions', 'poi_tags', 'tags', 'pois', 'users', 'interests', 'cities'];
+    await withTransaction(async (client) => {
+      for (const t of tables) await client.query(`DELETE FROM ${t}`);
+      await client.query(`DELETE FROM sqlite_sequence WHERE name IN (${tables.map((t) => `'${t}'`).join(', ')})`);
+    });
     console.log('Tablolar boşaltıldı.');
   }
 
-  const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM users');
+  const { rows } = await pool.query('SELECT COUNT(*) AS n FROM users');
   if (rows[0].n > 0) {
     console.log(`users tablosunda zaten ${rows[0].n} kayıt var. Yeniden yüklemek için: npm run db:seed -- --reset`);
     process.exit(0);
@@ -43,7 +48,7 @@ try {
       await client.query(
         `INSERT INTO cities (name, country, center_lat, center_lng, radius_km) VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (name, country) DO UPDATE
-           SET center_lat = EXCLUDED.center_lat, center_lng = EXCLUDED.center_lng, radius_km = EXCLUDED.radius_km`,
+           SET center_lat = excluded.center_lat, center_lng = excluded.center_lng, radius_km = excluded.radius_km`,
         [c.name, c.country, c.center_lat, c.center_lng, c.radius_km]
       );
     }
@@ -61,10 +66,9 @@ try {
          RETURNING id`,
         [p.city, p.interest, p.name, p.description, p.district, p.lat, p.lng, p.visit_minutes, p.price_level]
       );
-      await client.query(
-        `INSERT INTO poi_tags (poi_id, tag_id) SELECT $1, id FROM tags WHERE slug = ANY($2::text[])`,
-        [poi.id, p.tags]
-      );
+      for (const slug of p.tags) {
+        await client.query('INSERT INTO poi_tags (poi_id, tag_id) SELECT $1, id FROM tags WHERE slug = $2', [poi.id, slug]);
+      }
     }
   });
   console.log(`✔ ${CITIES.length} şehir, ${INTERESTS.length} ilgi alanı, ${TAGS.length} etiket, ${POIS.length} POI`);
