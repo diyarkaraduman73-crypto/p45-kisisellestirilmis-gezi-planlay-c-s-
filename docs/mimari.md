@@ -8,7 +8,7 @@ Proje **katmanlı mimari** (sunum / iş / veri) ile kurulmuştur. Frontend ve ba
 flowchart LR
     U([Kullanıcı<br/>tarayıcı])
 
-    subgraph FE["frontend/ — React + Vite (Vercel)"]
+    subgraph FE["frontend/ — React + Vite (Render Static Site)"]
         direction TB
         P[pages/<br/>Sayfalar]
         C[components/<br/>Form, Harita]
@@ -25,7 +25,7 @@ flowchart LR
         R --> SV --> RP
     end
 
-    DB[(PostgreSQL<br/>Neon)]
+    DB[(Turso<br/>libSQL / SQLite)]
     OSM[[OpenStreetMap<br/>harita karoları]]
     LLM[[Groq LLM API<br/>gezi planı - ileride]]
 
@@ -56,7 +56,7 @@ sequenceDiagram
     participant Ct as poiController
     participant Sv as poiService
     participant Rp as poiRepository
-    participant D as PostgreSQL
+    participant D as Turso
     F->>Rt: GET /api/pois?interests=tarih
     Rt->>Ct: listPois(req, res)
     Ct->>Sv: listPois({ interests: "tarih" })
@@ -82,8 +82,8 @@ sequenceDiagram
 
 | Parça | Servis | Not |
 |---|---|---|
-| Frontend | Vercel | `frontend/` kök klasör, her push'ta otomatik yayın |
+| Frontend | Render (Static Site) | `frontend/` kök klasör, her push'ta otomatik yayın |
 | Backend | Render (Free web service) | `backend/` kök klasör; 15 dk boşta kalınca uyur, ilk istek ~1 dk sürebilir |
-| Veritabanı | Neon (Free) | Kalıcı ücretsiz PostgreSQL |
+| Veritabanı | Turso (Free) | Ücretsiz libSQL (SQLite) veritabanı |
 | Harita | OpenStreetMap + Leaflet | Anahtar gerekmez |
 | Yapay zekâ | Groq (Free) | Sonraki haftalarda |

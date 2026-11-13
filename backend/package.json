@@ -12,12 +12,12 @@
     "db:setup": "node scripts/migrate.js && node scripts/seed.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
+    "@libsql/client": "^0.15.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.21.0",
-    "pg": "^8.13.0"
+    "express": "^4.21.0"
   }
 }

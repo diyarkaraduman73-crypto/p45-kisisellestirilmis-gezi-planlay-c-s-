@@ -15,15 +15,15 @@
 
 | Katman | Teknoloji | Ücretsiz yayın |
 |---|---|---|
-| Frontend | React 18 + Vite, Leaflet + OpenStreetMap | Vercel |
+| Frontend | React 18 + Vite, Leaflet + OpenStreetMap | Render (Static Site) |
 | Backend | Node.js + Express (REST API) | Render |
-| Veritabanı | PostgreSQL | Neon |
+| Veritabanı | Turso (libSQL / SQLite) | Turso Free |
 | Yapay zekâ | Groq LLM API (ileriki haftalar) | Groq Free |
 
 ## Klasör yapısı
 
 ```
-├── frontend/                 React arayüzü (Vercel'de yayınlanır)
+├── frontend/                 React arayüzü (Render'da statik site)
 │   └── src/
 │       ├── pages/            Sayfalar (Keşfet, Planla, Rota, Paylaşım, Giriş, Kayıt, Profilim, Rotalarım, Yönetim)
 │       ├── auth/             Oturum durumu (AuthContext)
@@ -55,7 +55,7 @@ Gereksinim: Node.js 18 veya üzeri.
 ```bash
 # 1) Backend
 cd backend
-cp .env.example .env        # DATABASE_URL ve JWT_SECRET'ı doldurun
+cp .env.example .env        # TURSO_DATABASE_URL, TURSO_AUTH_TOKEN ve JWT_SECRET'ı doldurun
 npm install
 npm run dev                 # http://localhost:4000/api/health
 
@@ -66,7 +66,9 @@ npm install
 npm run dev                 # http://localhost:5173
 ```
 
-Veritabanı ile çalışmak için Neon'da ücretsiz proje açın, bağlantı adresini `backend/.env` içindeki `DATABASE_URL`'e yazın ve `npm run db:setup` çalıştırın (migration'lar + sentetik örnek veri).
+Veritabanı ile çalışmak için Turso'da ücretsiz veritabanı açın, adresini ve token'ını `backend/.env` içindeki `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN`'a yazın ve `npm run db:setup` çalıştırın (migration'lar + sentetik örnek veri). Hesap açmadan denemek için `TURSO_DATABASE_URL=file:yerel.db` yazmanız yeterli.
+
+> Proje Hafta 3–7 boyunca PostgreSQL (Neon) kullandı; eski migration'lar `backend/db/postgres-arsiv/` klasöründe duruyor. Turso SQLite tabanlı olduğu için şema `db/migrations/001_turso_schema.sql` dosyasında SQLite'a çevrildi.
 
 ### Veritabanı komutları (backend klasöründe)
 
@@ -115,11 +117,15 @@ Veritabanı ile çalışmak için Neon'da ücretsiz proje açın, bağlantı adr
 
 Korumalı uçlara `Authorization: Bearer <token>` başlığıyla istek atılır. Ayrıntılar: [Güvenlik notu](docs/guvenlik-notu.md)
 
-## Ücretsiz yayınlama
+## Ücretsiz yayınlama (Turso + Render)
 
-1. **Neon:** Proje oluştur → bağlantı adresini kopyala → yerelde `npm run db:setup`.
-2. **Render:** New → Web Service → bu depo → *Root Directory* `backend`, *Build* `npm install`, *Start* `npm start`, plan **Free**. Ortam değişkenleri: `DATABASE_URL`, `CORS_ORIGIN` (Vercel adresin), `JWT_SECRET` (en az 32 karakter rastgele), `NODE_ENV=production`.
-3. **Vercel:** New Project → bu depo → *Root Directory* `frontend` (Vite otomatik algılanır). Ortam değişkeni: `VITE_API_URL` = Render adresin.
+1. **Turso:** turso.tech → *Create Database* (bölge: Frankfurt). Veritabanı sayfasından **URL**'yi (`libsql://...turso.io`) ve **Create Token** ile token'ı kopyala. (Yerelden yüklemek istersen: `backend/.env`'e yaz → `npm run db:setup`.)
+2. **Render:** *New → Blueprint* → bu depo. `render.yaml` iki servisi birlikte kurar: `gezi-planlayici-api` (backend) ve `gezi-planlayici` (frontend). Render şu değerleri sorar:
+   - `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` → 1. adımdakiler
+   - `CORS_ORIGIN` → frontend adresi, ör. `https://gezi-planlayici.onrender.com`
+   - `VITE_API_URL` → backend adresi, ör. `https://gezi-planlayici-api.onrender.com`
+   `JWT_SECRET`'ı Render kendisi üretir. Backend her açılışta eksik migration'ları uygular, veritabanı boşsa örnek veriyi yükler.
+3. Adresler farklı çıktıysa (isim doluysa Render sonuna ek koyar) `CORS_ORIGIN` ve `VITE_API_URL`'i gerçek adreslerle güncelle, frontend'i *Manual Deploy* ile yeniden yayınla.
 
 > Render ücretsiz servisi 15 dk boşta kalınca uyur; ilk istek yaklaşık 1 dakika sürebilir. Sunumdan önce siteyi bir kez açın.
 

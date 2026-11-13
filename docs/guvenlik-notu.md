@@ -8,7 +8,7 @@ Bu not, uygulamanın kimlik doğrulama ve yetkilendirme tasarımını, alınan �
 sequenceDiagram
     participant T as Tarayıcı
     participant A as API
-    participant D as PostgreSQL
+    participant D as Turso
     T->>A: POST /api/auth/login {email, parola}
     A->>D: kullanıcıyı ve parola özetini bul
     A->>A: scrypt(parola, tuz) == özet ? (sabit süreli karşılaştırma)
@@ -69,10 +69,10 @@ sequenceDiagram
 ## 4. Bilinçli tercihler ve bilinen sınırlar
 
 - **scrypt vs bcrypt/argon2:** Üçü de amaca uygun, yavaş "parola özetleme" algoritmalarıdır. scrypt Node.js ile yerleşik geldiği için ek paket gerekmedi. MD5/SHA-256 gibi hızlı özetler parola için uygun **değildir**.
-- **Token nerede saklanıyor?** Tarayıcıda `sessionStorage`'da (sekme kapanınca silinir) ve `Authorization` başlığıyla gönderiliyor. Böylece CSRF saldırısı (tarayıcının çerezi otomatik göndermesi) riski yok. Dezavantajı: sayfada bir XSS açığı olursa JavaScript token'ı okuyabilir. React çıktıyı varsayılan olarak kaçışladığı ve `dangerouslySetInnerHTML` kullanılmadığı için risk düşük tutuldu. Daha güçlü alternatif `HttpOnly; Secure; SameSite` çerezdir; ancak frontend (Vercel) ve backend (Render) farklı alan adlarında olduğundan üçüncü taraf çerez kısıtlamaları ve CSRF koruması ek iş gerektirir.
+- **Token nerede saklanıyor?** Tarayıcıda `sessionStorage`'da (sekme kapanınca silinir) ve `Authorization` başlığıyla gönderiliyor. Böylece CSRF saldırısı (tarayıcının çerezi otomatik göndermesi) riski yok. Dezavantajı: sayfada bir XSS açığı olursa JavaScript token'ı okuyabilir. React çıktıyı varsayılan olarak kaçışladığı ve `dangerouslySetInnerHTML` kullanılmadığı için risk düşük tutuldu. Daha güçlü alternatif `HttpOnly; Secure; SameSite` çerezdir; ancak frontend ve backend Render'da farklı alt alan adlarında olduğundan üçüncü taraf çerez kısıtlamaları ve CSRF koruması ek iş gerektirir.
 - **JWT + sunucu oturumu birlikte:** Saf JWT "durumsuzdur" ve süresi dolana kadar iptal edilemez. Her isteğe küçük bir oturum sorgusu ekleyerek çıkış ve zorla oturum kapatma desteklendi; bedeli istek başına bir indeksli SELECT.
 - **Hesap kilitleme kötüye kullanılabilir:** Saldırgan başkasının e-postasıyla 5 kez yanlış deneyip hesabı 15 dk kilitleyebilir. İleride IP bazlı hız sınırlaması (rate limit) ve CAPTCHA eklenebilir.
-- **CORS:** Yayında `CORS_ORIGIN` yalnızca Vercel adresine ayarlanmalı (`*` bırakılmamalı).
+- **CORS:** Yayında `CORS_ORIGIN` yalnızca frontend adresine ayarlanmalı (`*` bırakılmamalı).
 - **Henüz yok:** e-posta doğrulama, parola sıfırlama e-postası, iki adımlı doğrulama, denetim günlüğü (audit log).
 
 ## 5. OWASP Top 10 ile ilişki

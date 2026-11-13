@@ -2,15 +2,16 @@
 // Okuma işlemleri DB yokken seed verisiyle de çalışır; yazma işlemleri DB gerektirir.
 import { pool, hasDb, requireDb, withTransaction } from '../config/db.js';
 import { POIS } from '../data/seed.js';
-import { boundingBox, distanceKm, sqlDistanceKm } from '../utils/geo.js';
+import { boundingBox, distanceKm } from '../utils/geo.js';
+import * as cityRepository from './cityRepository.js';
 
 const COLUMNS = `
   p.id, p.name, p.description, p.district, p.address, p.lat, p.lng,
   p.visit_minutes, p.price_level, p.is_active, p.updated_at,
   c.name AS city, i.slug AS interest, i.name AS interest_name,
-  COALESCE((SELECT array_agg(t.slug ORDER BY t.slug)
-            FROM poi_tags pt JOIN tags t ON t.id = pt.tag_id
-            WHERE pt.poi_id = p.id), '{}') AS tags`;
+  (SELECT group_concat(t.slug, ',')
+   FROM poi_tags pt JOIN tags t ON t.id = pt.tag_id
+   WHERE pt.poi_id = p.id) AS tags`;
 
 const FROM = `
   FROM pois p
@@ -18,6 +19,16 @@ const FROM = `
   JOIN interests i ON i.id = p.interest_id`;
 
 const lower = (s) => s.toLocaleLowerCase('tr');
+
+// SQLite satırını API'nin beklediği biçime çevirir: 0/1 → boolean, "a,b" → ['a','b']
+const toPoi = (r) => r && {
+  ...r,
+  is_active: !!r.is_active,
+  tags: r.tags ? r.tags.split(',').sort() : [],
+};
+
+// IN (...) listesi için parametre yer tutucuları üretir
+const inList = (add, arr) => `(${arr.map((v) => add(v)).join(', ')})`;
 
 // READ (liste). Filtreler:
 //   city, interests[], tags[] (hepsini taşıyanlar), search (ad öneki), priceMax,
@@ -32,36 +43,41 @@ export async function findMany(f = {}) {
   const params = [];
   const add = (v) => { params.push(v); return `$${params.length}`; };
 
-  if (!includeInactive) conds.push('p.is_active');
-  if (city) conds.push(`lower(c.name) = lower(${add(city)})`);
-  if (interests.length) conds.push(`i.slug = ANY(${add(interests)}::text[])`);
+  if (!includeInactive) conds.push('p.is_active = 1');
+  if (city) {
+    const c = await cityRepository.findByName(city);
+    if (!c) return [];
+    conds.push(`p.city_id = ${add(c.id)}`);
+  }
+  if (interests.length) conds.push(`i.slug IN ${inList(add, interests)}`);
   if (tags.length) {
     // İlişkisel bölme: istenen etiketlerin HEPSİNE sahip POI'ler
     conds.push(`p.id IN (SELECT pt.poi_id FROM poi_tags pt JOIN tags t ON t.id = pt.tag_id
-                         WHERE t.slug = ANY(${add(tags)}::text[])
+                         WHERE t.slug IN ${inList(add, tags)}
                          GROUP BY pt.poi_id HAVING COUNT(DISTINCT t.slug) = ${add(tags.length)})`);
   }
   if (search) conds.push(`lower(p.name) LIKE ${add(`${search.toLowerCase()}%`)}`);
   if (priceMax !== undefined) conds.push(`p.price_level <= ${add(priceMax)}`);
 
-  let distance = '';
-  let order = 'p.id';
   if (near) {
+    // Önce indeksli kutu (bounding box) ön filtresi SQL'de, kesin mesafe (Haversine) JS'te hesaplanır.
     const b = boundingBox(near.lat, near.lng, near.radiusKm);
     conds.push(`p.lat BETWEEN ${add(b.minLat)} AND ${add(b.maxLat)}`);
     conds.push(`p.lng BETWEEN ${add(b.minLng)} AND ${add(b.maxLng)}`);
-    const d = sqlDistanceKm(add(near.lat), add(near.lng));
-    conds.push(`${d} <= ${add(near.radiusKm)}`);
-    distance = `, round(${d}::numeric, 2)::float AS distance_km`;
-    order = 'distance_km';
   }
 
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
-  const { rows } = await pool.query(
-    `SELECT ${COLUMNS}${distance} ${FROM} ${where} ORDER BY ${order} LIMIT ${add(limit)}`,
-    params
-  );
-  return rows;
+  const limitSql = near ? '' : ` LIMIT ${add(limit)}`;
+  const { rows } = await pool.query(`SELECT ${COLUMNS} ${FROM} ${where} ORDER BY p.id${limitSql}`, params);
+  let list = rows.map(toPoi);
+  if (near) {
+    list = list
+      .map((p) => ({ ...p, distance_km: Math.round(distanceKm(near.lat, near.lng, p.lat, p.lng) * 100) / 100 }))
+      .filter((p) => p.distance_km <= near.radiusKm)
+      .sort((a, b) => a.distance_km - b.distance_km || a.id - b.id)
+      .slice(0, limit);
+  }
+  return list;
 }
 
 function findManyInMemory({ city, interests = [], tags = [], search, priceMax, near }) {
@@ -89,16 +105,16 @@ export async function findById(id, { includeInactive = false } = {}) {
     return p ? { ...p, is_active: true } : null;
   }
   const { rows } = await pool.query(
-    `SELECT ${COLUMNS} ${FROM} WHERE p.id = $1 ${includeInactive ? '' : 'AND p.is_active'}`,
+    `SELECT ${COLUMNS} ${FROM} WHERE p.id = $1 ${includeInactive ? '' : 'AND p.is_active = 1'}`,
     [id]
   );
-  return rows[0] || null;
+  return toPoi(rows[0]) || null;
 }
 
 // İş kuralı kontrolü: aynı şehirde aynı ad (kendisi hariç)
 export async function existsByCityAndName(cityId, name, exceptId = null) {
   const { rowCount } = await requireDb().query(
-    `SELECT 1 FROM pois WHERE city_id = $1 AND lower(name) = lower($2) AND ($3::int IS NULL OR id <> $3::int)`,
+    `SELECT 1 FROM pois WHERE city_id = $1 AND lower(name) = lower($2) AND ($3 IS NULL OR id <> $3)`,
     [cityId, name, exceptId]
   );
   return rowCount > 0;
@@ -106,24 +122,29 @@ export async function existsByCityAndName(cityId, name, exceptId = null) {
 
 // Gezi planına eklenebilir (aktif) POI sayısı
 export async function countActive(ids) {
+  if (!ids.length) return 0;
+  const params = [];
+  const add = (v) => { params.push(v); return `$${params.length}`; };
   const { rows } = await requireDb().query(
-    'SELECT COUNT(*)::int AS n FROM pois WHERE id = ANY($1::int[]) AND is_active',
-    [ids]
+    `SELECT COUNT(*) AS n FROM pois WHERE id IN ${inList(add, ids)} AND is_active = 1`,
+    params
   );
   return rows[0].n;
 }
 
 export async function usageCount(id) {
-  const { rows } = await requireDb().query('SELECT COUNT(*)::int AS n FROM day_plan_items WHERE poi_id = $1', [id]);
+  const { rows } = await requireDb().query('SELECT COUNT(*) AS n FROM day_plan_items WHERE poi_id = $1', [id]);
   return rows[0].n;
 }
 
 async function setTags(client, poiId, tagSlugs) {
   await client.query('DELETE FROM poi_tags WHERE poi_id = $1', [poiId]);
   if (!tagSlugs.length) return;
+  const params = [poiId];
+  const add = (v) => { params.push(v); return `$${params.length}`; };
   await client.query(
-    `INSERT INTO poi_tags (poi_id, tag_id) SELECT $1, id FROM tags WHERE slug = ANY($2::text[])`,
-    [poiId, tagSlugs]
+    `INSERT INTO poi_tags (poi_id, tag_id) SELECT $1, id FROM tags WHERE slug IN ${inList(add, tagSlugs)}`,
+    params
   );
 }
 
@@ -170,7 +191,11 @@ export async function update(id, d) {
 }
 
 // DELETE (kalıcı). Planlarda kullanılan POI için servis bunun yerine pasifleştirir.
+// Bağlı etiket satırları da aynı transaction'da silinir (SQLite'ta CASCADE'e güvenilmez).
 export async function remove(id) {
-  const { rowCount } = await requireDb().query('DELETE FROM pois WHERE id = $1', [id]);
-  return rowCount > 0;
+  return withTransaction(async (client) => {
+    await client.query('DELETE FROM poi_tags WHERE poi_id = $1', [id]);
+    const { rowCount } = await client.query('DELETE FROM pois WHERE id = $1', [id]);
+    return rowCount > 0;
+  });
 }

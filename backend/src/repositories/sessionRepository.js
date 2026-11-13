@@ -1,5 +1,5 @@
 // VERİ KATMANI: Oturumlar (JWT jti kayıtları)
-import { requireDb } from '../config/db.js';
+import { requireDb, NOW } from '../config/db.js';
 
 export async function create({ id, userId, expiresAt, userAgent }) {
   await requireDb().query(
@@ -12,21 +12,21 @@ export async function create({ id, userId, expiresAt, userAgent }) {
 export async function findActive(id) {
   const { rows } = await requireDb().query(
     `SELECT id, user_id, expires_at FROM sessions
-     WHERE id = $1 AND revoked_at IS NULL AND expires_at > NOW()`,
+     WHERE id = $1 AND revoked_at IS NULL AND expires_at > ${NOW}`,
     [id]
   );
   return rows[0] || null;
 }
 
 export async function revoke(id) {
-  await requireDb().query('UPDATE sessions SET revoked_at = NOW() WHERE id = $1 AND revoked_at IS NULL', [id]);
+  await requireDb().query(`UPDATE sessions SET revoked_at = ${NOW} WHERE id = $1 AND revoked_at IS NULL`, [id]);
 }
 
 // Parola değişince / hesap kilitlenince: (isteğe bağlı olarak mevcut oturum hariç) tüm oturumları kapat
 export async function revokeAllForUser(userId, exceptId = null) {
   const { rowCount } = await requireDb().query(
-    `UPDATE sessions SET revoked_at = NOW()
-     WHERE user_id = $1 AND revoked_at IS NULL AND ($2::uuid IS NULL OR id <> $2::uuid)`,
+    `UPDATE sessions SET revoked_at = ${NOW}
+     WHERE user_id = $1 AND revoked_at IS NULL AND ($2 IS NULL OR id <> $2)`,
     [userId, exceptId]
   );
   return rowCount;
@@ -35,7 +35,8 @@ export async function revokeAllForUser(userId, exceptId = null) {
 // Süresi 7 günden fazla önce dolmuş kayıtları temizler (tablo şişmesin)
 export async function deleteExpired() {
   const { rowCount } = await requireDb().query(
-    `DELETE FROM sessions WHERE expires_at < NOW() - INTERVAL '7 days'`
+    `DELETE FROM sessions WHERE expires_at < $1`,
+    [new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)]
   );
   return rowCount;
 }
