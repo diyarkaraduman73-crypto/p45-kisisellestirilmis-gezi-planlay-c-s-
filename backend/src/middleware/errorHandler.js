@@ -8,6 +8,11 @@ const PG_ERRORS = {
   23503: [409, 'İlişkili kayıt bulunamadı veya kayıt başka bir yerde kullanılıyor (yabancı anahtar kısıtı)'],
   23514: [400, 'Değer izin verilen aralıkta değil (CHECK kısıtı)'],
   23502: [400, 'Zorunlu alan boş bırakılamaz (NOT NULL kısıtı)'],
+  // Hafta 8: geçersiz değer biçimleri artık 500 değil 400 (doğrulamadan kaçan bir değer olursa diye son savunma hattı)
+  '22007': [400, 'Geçersiz tarih/saat biçimi'],
+  '22008': [400, 'Tarih/saat değeri aralık dışında'],
+  '22P02': [400, 'Geçersiz değer biçimi'],
+  '22003': [400, 'Sayı izin verilen aralığın dışında'],
 };
 
 // eslint-disable-next-line no-unused-vars

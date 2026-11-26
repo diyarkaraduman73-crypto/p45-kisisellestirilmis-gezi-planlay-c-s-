@@ -3,6 +3,12 @@ import pg from 'pg';
 
 const { DATABASE_URL } = process.env;
 
+// Hafta 8 düzeltmesi: PostgreSQL DATE (OID 1082) varsayılan olarak yerel gece yarısına ayarlı bir
+// JS Date nesnesine çevriliyor, JSON'a yazılırken de UTC'ye kayıyordu. Türkiye'de (UTC+3) çalışan
+// sunucuda 2026-11-26 tarihli rota "2026-11-25T21:00:00Z" olarak gidiyor, arayüzde bir gün önce
+// görünüyordu. Takvim tarihinin saati/saat dilimi yoktur; olduğu gibi "YYYY-AA-GG" metni döndürülür.
+pg.types.setTypeParser(1082, (value) => value);
+
 export const pool = DATABASE_URL
   ? new pg.Pool({
       connectionString: DATABASE_URL,

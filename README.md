@@ -1,5 +1,7 @@
 # 🧭 P45 · Kişiselleştirilmiş Gezi Planlayıcı
 
+**Güncel sürüm:** `v0.8.0` (ara sürüm / vize) · [Değişiklik günlüğü](CHANGELOG.md) · [Demo senaryosu](docs/demo-senaryosu.md)
+
 **Öğrenci:** Diyar Karaduman · **Numara:** 251161035
 
 İlgi alanına, süresine ve konumuna göre **gün gün kişiselleştirilmiş gezi rotası** üreten web uygulaması.
@@ -34,6 +36,7 @@
 │   ├── db/schema.sql         Güncel şemanın tam dökümü (otomatik üretilir)
 │   ├── db/ornek-sorgular.sql Demo sorguları (JOIN, EXPLAIN, transaction)
 │   ├── scripts/              migrate.js, seed.js (sentetik veri)
+│   ├── tests/                birim/ (npm test) ve entegrasyon/ (npm run test:entegrasyon)
 │   └── src/
 │       ├── routes/           SUNUM: URL eşlemeleri
 │       ├── controllers/      SUNUM: istek/yanıt
@@ -68,6 +71,15 @@ npm run dev                 # http://localhost:5173
 
 Veritabanı ile çalışmak için Neon'da ücretsiz proje açın, bağlantı adresini `backend/.env` içindeki `DATABASE_URL`'e yazın ve `npm run db:setup` çalıştırın (migration'lar + sentetik örnek veri).
 
+### Testler (backend klasöründe)
+
+| Komut | Ne yapar | Gereken |
+|---|---|---|
+| `npm test` | Birim testleri: rota planlayıcı ve doğrulama | Hiçbir şey (veritabanı/sunucu gerekmez) |
+| `npm run test:entegrasyon` | Uçtan uca senaryo: kayıt → profil → plan → kaydet → paylaş → sil (gerçek HTTP + SQL) | Başka bir terminalde `npm run dev` ve `DATABASE_URL` |
+
+Yayındaki sunucuya karşı: `API_URL=https://<servis>.onrender.com npm run test:entegrasyon`
+
 ### Veritabanı komutları (backend klasöründe)
 
 | Komut | Ne yapar |
@@ -91,7 +103,7 @@ Veritabanı ile çalışmak için Neon'da ücretsiz proje açın, bağlantı adr
 
 | Metot | Yol | Erişim | Açıklama |
 |---|---|---|---|
-| GET | `/api/health`, `/api/interests`, `/api/cities` | 🔓 | Durum ve referans listeleri |
+| GET | `/api/health`, `/api/interests`, `/api/cities` | 🔓 | Durum (sürüm, veritabanı) ve referans listeleri |
 | POST | `/api/auth/register`, `/api/auth/login` | 🔓 | Kayıt / giriş → `{ token, user }` |
 | POST | `/api/auth/logout` | 🔑 | Oturumu sonlandırır |
 | GET | `/api/auth/me` | 🔑 | Giriş yapan kullanıcı |
@@ -132,5 +144,6 @@ Korumalı uçlara `Authorization: Bearer <token>` başlığıyla istek atılır.
 | 5 | Kullanıcı yönetimi ve kimlik doğrulama | [rapor](docs/haftalar/hafta-5/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-5/yapay-zeka-gunlugu.md) |
 | 6 | Çekirdek Modül A: POI Kataloğu ve İlgi Profili | [rapor](docs/haftalar/hafta-6/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-6/yapay-zeka-gunlugu.md) · [modül açıklaması](docs/moduller/poi-katalogu-ilgi-profili.md) |
 | 7 | Çekirdek Modül B: Rota ve Gün Planı Üretimi | [rapor](docs/haftalar/hafta-7/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-7/yapay-zeka-gunlugu.md) · [modül açıklaması](docs/moduller/rota-gun-plani.md) |
+| 8 | **VİZE** · Ara sürüm `v0.8.0`, entegrasyon, sözlü hazırlık | [rapor](docs/haftalar/hafta-8/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-8/yapay-zeka-gunlugu.md) · [demo senaryosu](docs/demo-senaryosu.md) |
 
-Her haftanın raporu ve yapay zekâ kullanım günlüğü `docs/haftalar/hafta-N/` klasöründedir. Güncel kod `main` dalındadır; her haftanın teslim edilen son hali ayrıca `hafta-N` dalında saklanır.
+Her haftanın raporu ve yapay zekâ kullanım günlüğü `docs/haftalar/hafta-N/` klasöründedir. Güncel kod `main` dalındadır; her haftanın teslim edilen son hali ayrıca `hafta-N` dalında saklanır. Ara sürüm `v0.8.0` etiketiyle işaretlidir (`git checkout v0.8.0`).
