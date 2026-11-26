@@ -7,6 +7,7 @@ import * as poiRepository from '../repositories/poiRepository.js';
 import { ValidationError, NotFoundError, ForbiddenError } from '../utils/errors.js';
 import { isAdmin, assertSelfOrAdmin } from './userService.js';
 import { toId, requiredString, optionalString, optionalDate } from '../utils/validate.js';
+import { routing, dayPoints } from './routingService.js';
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -118,4 +119,26 @@ export async function shareTrip(actor, rawId, body = {}) {
     newCode: body.regenerate === true ? randomBytes(9).toString('base64url') : undefined,
   });
   return { id: updated.id, isPublic: updated.is_public, shareCode: updated.is_public ? updated.share_code : null };
+}
+
+// HARİTA ENTEGRASYONU (Hafta 9): kayıtlı rotanın bir gününün gerçek yürüme yolu
+function pickDay(trip, rawDay) {
+  const n = Number(rawDay);
+  if (!Number.isInteger(n) || n < 1 || n > trip.day_count) throw new ValidationError(`Gün 1 ile ${trip.day_count} arasında olmalı`);
+  return trip.days.find((d) => d.day_number === n) ?? { day_number: n, items: [] };
+}
+
+export async function getDayPath(actor, rawId, rawDay) {
+  const trip = await loadOwned(actor, rawId);
+  const start = trip.start_lat != null ? { lat: trip.start_lat, lng: trip.start_lng } : null;
+  const { points, modes } = dayPoints(pickDay(trip, rawDay), start);
+  return routing.walkingPath(points, modes);
+}
+
+// Paylaşılan rota: başlangıç (otel) noktası burada da kullanılmaz (R11)
+export async function getSharedDayPath(code, rawDay) {
+  const trip = await tripRepository.findPublicByShareCode(String(code));
+  if (!trip) throw new NotFoundError('Rota bulunamadı veya paylaşıma kapalı');
+  const { points, modes } = dayPoints(pickDay(trip, rawDay), null);
+  return routing.walkingPath(points, modes);
 }

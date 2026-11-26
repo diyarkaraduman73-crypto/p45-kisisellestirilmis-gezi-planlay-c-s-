@@ -142,6 +142,22 @@ test('9) Paylaşım: varsayılan kapalı → aç → herkese açık sayfa → ye
   assert.equal((await call('GET', `/api/trips/shared/${on.data.shareCode}`, null, false)).status, 404);
 });
 
+test('9b) Harita (H9): gün yolu döner; servis yoksa düz çizgi + uyarı, paylaşımda da çalışır', async (t) => {
+  if (skip) return t.skip(skip);
+  const day1 = ctx.preview.days[0];
+  const r = await call('GET', `/api/trips/${ctx.tripId}/days/1/path`);
+  assert.equal(r.status, 200, JSON.stringify(r.data));
+  assert.ok(['openrouteservice', 'duz-cizgi'].includes(r.data.source));
+  assert.equal(r.data.legs.length, day1.items.length - 1, 'başlangıç noktası yok: bacak = durak − 1');
+  if (r.data.source === 'duz-cizgi') assert.ok(r.data.warning, 'yedeğe düşünce kullanıcıya neden söylenmeli');
+
+  assert.equal((await call('GET', `/api/trips/${ctx.tripId}/days/9/path`)).status, 400);
+  const code = (await call('POST', `/api/trips/${ctx.tripId}/share`, { isPublic: true })).data.shareCode;
+  assert.equal((await call('GET', `/api/trips/shared/${code}/days/1/path`, null, false)).status, 200);
+  const ankara = await call('POST', '/api/routing/path', { points: [{ lat: 41.0, lng: 28.97 }, { lat: 39.93, lng: 32.85 }] });
+  assert.equal(ankara.status, 400, 'şehir dışı noktalar için servisimiz vekil olarak kullanılamaz');
+});
+
 test('10) Temizlik: rota silinir, çıkıştan sonra token geçersiz', async (t) => {
   if (skip) return t.skip(skip);
   assert.equal((await call('DELETE', `/api/trips/${ctx.tripId}`)).status, 204);

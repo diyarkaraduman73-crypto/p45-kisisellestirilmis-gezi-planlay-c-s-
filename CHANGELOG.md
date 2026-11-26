@@ -8,7 +8,19 @@ Bu projede [anlamsal sürümleme](https://semver.org/lang/tr/) (MAJOR.MINOR.PATC
 
 Her sürüm Git'te `vX.Y.Z` etiketiyle işaretlenir. Çalışan sürüm `GET /api/health` yanıtındaki `version` alanında ve arayüzün üst çubuğunda görünür.
 
-## [0.8.0] — 2026-11-26 · Ara sürüm (vize)
+## [0.9.0] — 2026-11-26 · Harita entegrasyonu (Hafta 9)
+
+### Eklendi
+- Duraklar arasında gerçek yürüme yolu: openrouteservice (HeiGIT) Directions API, `ORS_API_KEY` ile.
+- Uçlar: `GET /api/trips/:id/days/:day/path`, `GET /api/trips/shared/:code/days/:day/path`, `POST /api/routing/path`.
+- Harici istekler için ortak istemci: zaman aşımı, yeniden deneme, 429/`Retry-After`, hata sınıflandırma.
+- Hız sınırı (dışarıya 30/dk, uçlarımızda kullanıcı/IP başına 60/dk) ve 24 saatlik yol önbelleği.
+- `/api/health` → `services.harita`.
+
+### Değişti
+- Haritada yürüyüş bacakları düz, toplu taşıma bacakları kesikli çizgi; servis yoksa düz çizgi + neden notu.
+
+ — 2026-11-26 · Ara sürüm (vize)
 
 İlk etiketli sürüm. Kullanıcı yönetimi + veritabanı + iki çekirdek modül uçtan uca birlikte çalışıyor.
 

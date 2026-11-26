@@ -1,6 +1,6 @@
 # 🧭 P45 · Kişiselleştirilmiş Gezi Planlayıcı
 
-**Güncel sürüm:** `v0.8.0` (ara sürüm / vize) · [Değişiklik günlüğü](CHANGELOG.md) · [Demo senaryosu](docs/demo-senaryosu.md)
+**Güncel sürüm:** `0.9.0` · Ara sürüm (vize): `v0.8.0` · [Değişiklik günlüğü](CHANGELOG.md) · [Demo senaryosu](docs/demo-senaryosu.md)
 
 **Öğrenci:** Diyar Karaduman · **Numara:** 251161035
 
@@ -20,6 +20,7 @@
 | Frontend | React 18 + Vite, Leaflet + OpenStreetMap | Vercel |
 | Backend | Node.js + Express (REST API) | Render |
 | Veritabanı | PostgreSQL | Neon |
+| Harita yolu | openrouteservice (HeiGIT) Directions API | Ücretsiz anahtar (2000/gün) |
 | Yapay zekâ | Groq LLM API (ileriki haftalar) | Groq Free |
 
 ## Klasör yapısı
@@ -123,6 +124,9 @@ Yayındaki sunucuya karşı: `API_URL=https://<servis>.onrender.com npm run test
 | POST | `/api/trips` | 🔑 | Elle rota (giriş yapan adına) |
 | GET / PATCH / DELETE | `/api/trips/:id` | 👤 | Rota (sahibi veya yönetici) |
 | POST | `/api/trips/:id/share` | 👤 | Paylaşımı aç/kapat, bağlantıyı yenile |
+| GET | `/api/trips/:id/days/:day/path` | 👤 | Günün gerçek yürüme yolu (harita servisi; yoksa düz çizgi + uyarı) |
+| GET | `/api/trips/shared/:code/days/:day/path` | 🔓 | Paylaşılan rotanın günlük yolu (başlangıç noktası hariç) |
+| POST | `/api/routing/path` | 🔑 | Önizleme için yol: `{ points: [{lat,lng}], modes }` (≤ 12 nokta, şehir içinde) |
 | GET | `/api/trips/shared/:code` | 🔓 | Paylaşılan rota (yalnızca paylaşım açıksa) |
 
 Korumalı uçlara `Authorization: Bearer <token>` başlığıyla istek atılır. Ayrıntılar: [Güvenlik notu](docs/guvenlik-notu.md)
@@ -130,8 +134,8 @@ Korumalı uçlara `Authorization: Bearer <token>` başlığıyla istek atılır.
 ## Ücretsiz yayınlama
 
 1. **Neon:** Proje oluştur → bağlantı adresini kopyala → yerelde `npm run db:setup`.
-2. **Render:** New → Web Service → bu depo → *Root Directory* `backend`, *Build* `npm install`, *Start* `npm start`, plan **Free**. Ortam değişkenleri: `DATABASE_URL`, `CORS_ORIGIN` (Vercel adresin), `JWT_SECRET` (en az 32 karakter rastgele), `NODE_ENV=production`.
-3. **Vercel:** New Project → bu depo → *Root Directory* `frontend` (Vite otomatik algılanır). Ortam değişkeni: `VITE_API_URL` = Render adresin.
+2. **Render:** New → Web Service → bu depo → *Root Directory* `backend`, *Build* `npm install`, *Start* `npm start`, plan **Free**. Ortam değişkenleri: `DATABASE_URL`, `CORS_ORIGIN` (Vercel adresin), `JWT_SECRET` (en az 32 karakter rastgele), `NODE_ENV=production`, `ORS_API_KEY` (harita; account.heigit.org'dan ücretsiz).
+3. **Vercel:** New Project → bu depo → *Root Directory* `frontend` (Vite otomatik algılanır). Ortam değişkeni: `VITE_API_URL` = Render adresin. **API anahtarlarını Vercel'e koymayın** (`VITE_*` değişkenleri tarayıcıya gömülür).
 
 > Render ücretsiz servisi 15 dk boşta kalınca uyur; ilk istek yaklaşık 1 dakika sürebilir. Sunumdan önce siteyi bir kez açın.
 
@@ -145,5 +149,6 @@ Korumalı uçlara `Authorization: Bearer <token>` başlığıyla istek atılır.
 | 6 | Çekirdek Modül A: POI Kataloğu ve İlgi Profili | [rapor](docs/haftalar/hafta-6/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-6/yapay-zeka-gunlugu.md) · [modül açıklaması](docs/moduller/poi-katalogu-ilgi-profili.md) |
 | 7 | Çekirdek Modül B: Rota ve Gün Planı Üretimi | [rapor](docs/haftalar/hafta-7/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-7/yapay-zeka-gunlugu.md) · [modül açıklaması](docs/moduller/rota-gun-plani.md) |
 | 8 | **VİZE** · Ara sürüm `v0.8.0`, entegrasyon, sözlü hazırlık | [rapor](docs/haftalar/hafta-8/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-8/yapay-zeka-gunlugu.md) · [demo senaryosu](docs/demo-senaryosu.md) |
+| 9 | Harici API entegrasyonu: Harita | [rapor](docs/haftalar/hafta-9/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-9/yapay-zeka-gunlugu.md) · [modül açıklaması](docs/moduller/harita-entegrasyonu.md) |
 
 Her haftanın raporu ve yapay zekâ kullanım günlüğü `docs/haftalar/hafta-N/` klasöründedir. Güncel kod `main` dalındadır; her haftanın teslim edilen son hali ayrıca `hafta-N` dalında saklanır. Ara sürüm `v0.8.0` etiketiyle işaretlidir (`git checkout v0.8.0`).

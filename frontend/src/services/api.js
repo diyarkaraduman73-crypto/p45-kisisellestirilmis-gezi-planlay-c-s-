@@ -78,6 +78,11 @@ export const api = {
     request(`/api/trips/${id}/share`, { method: 'POST', body: { isPublic, regenerate } }),
   sharedTrip: (code) => request(`/api/trips/shared/${encodeURIComponent(code)}`),
 
+  // harita entegrasyonu (Hafta 9): gerçek yürüme yolu — anahtar sunucuda, tarayıcı servisle doğrudan konuşmaz
+  routePath: (points, modes) => request('/api/routing/path', { method: 'POST', body: { points, modes } }),
+  tripDayPath: (id, day) => request(`/api/trips/${id}/days/${day}/path`),
+  sharedDayPath: (code, day) => request(`/api/trips/shared/${encodeURIComponent(code)}/days/${day}/path`),
+
   // yönetici
   users: () => request('/api/users?limit=100'),
   changeRole: (id, role) => request(`/api/users/${id}/role`, { method: 'PATCH', body: { role } }),

@@ -183,6 +183,14 @@ export default function PlannerPage() {
         days={plan.days}
         start={plan.params.start}
         totals={plan.totals}
+        loadPath={(day) => {
+          // Önizleme kaydedilmediği için noktalar istemciden gönderilir (sunucu şehir dışını reddeder)
+          const pts = day.items.map((i) => ({ lat: i.lat, lng: i.lng }));
+          const modes = day.items.map((i) => i.travel_mode);
+          return plan.params.start
+            ? api.routePath([plan.params.start, ...pts], modes)
+            : api.routePath(pts, modes.slice(1));
+        }}
         header={
           <>
             <button className="link-btn back" onClick={() => setPlan(null)}>← Ayarlara dön</button>
