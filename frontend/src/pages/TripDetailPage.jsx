@@ -42,6 +42,7 @@ export default function TripDetailPage({ id }) {
     <main className="planner-result">
       <TripView
         {...view}
+        loadPath={(day) => api.tripDayPath(trip.id, day.day_number)}
         header={
           <>
             <a href="#/rotalarim" className="link-btn back">← Rotalarım</a>

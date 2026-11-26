@@ -13,3 +13,5 @@ export const remove = async (req, res) => {
 export const share = async (req, res) => res.json(await tripService.shareTrip(req.actor, req.params.id, req.body || {}));
 export const plan = async (req, res) => res.json(await routePlanService.previewPlan(req.actor, req.body || {}));
 export const generate = async (req, res) => res.status(201).json(await routePlanService.generateAndSave(req.actor, req.body || {}));
+export const dayPath = async (req, res) => res.json(await tripService.getDayPath(req.actor, req.params.id, req.params.day));
+export const sharedDayPath = async (req, res) => res.json(await tripService.getSharedDayPath(req.params.code, req.params.day));

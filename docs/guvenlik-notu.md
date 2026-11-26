@@ -85,3 +85,15 @@ sequenceDiagram
 | A04 Insecure Design | Son yönetici koruması, kayıtta rol atanamaması |
 | A05 Security Misconfiguration | Güvenlik başlıkları, `X-Powered-By` kapalı, üretimde zayıf anahtarla başlamama |
 | A07 Identification and Authentication Failures | Parola politikası, kilitleme, genel hata mesajı, oturum süresi ve iptali |
+
+## 6. Harici API anahtarları (Hafta 9)
+
+| Kural | Nasıl uygulandı |
+|---|---|
+| Anahtar depoda değil | `ORS_API_KEY` yalnızca `backend/.env` (yerel) ve Render → Environment'ta; `.gitignore` `.env` dosyalarını dışlar, `.env.example`'da boş |
+| Anahtar tarayıcıda değil | Tarayıcı harita servisiyle **doğrudan konuşmaz**; `/api/routing/path` ve `/api/trips/:id/days/:n/path` sunucumuz üzerinden gider. `VITE_` ile başlayan değişkenler derlenmiş JS'e gömüldüğü için anahtar asla `VITE_*` olarak tanımlanmaz |
+| Anahtar URL'de değil | `Authorization` başlığında gönderilir; URL'de olsaydı vekil/sunucu kayıtlarına düşebilirdi |
+| Anahtar hata mesajında/kayıtta değil | `httpClient` hata mesajına yalnızca alan adını yazar; `/api/health` yalnızca "ayarlı mı" bilgisini döner |
+| Servisimiz başkalarına bedava vekil olmasın | Uçlar giriş veya paylaşım kodu ister; kullanıcı/IP başına dakikada 60 istek; nokta sayısı ≤ 12 ve şehir hizmet alanı içinde |
+| Kotayı korumak | Dışarıya dakikada en fazla 30 istek (plan sınırı 40/dk, 2000/gün), aynı yol 24 saat önbellekte |
+| Anahtar sızarsa | HeiGIT panelinden anahtarı iptal edip yenisini Render'a gir; kod değişikliği gerekmez |

@@ -14,14 +14,31 @@ function Fit({ points }) {
   return null;
 }
 
+// Harita servisinden gelen yol durumunu kullanıcıya açıklayan not
+function PathNote({ path }) {
+  if (!path) return null;
+  if (path.loading) return <p className="map-note">Yol hesaplanıyor…</p>;
+  if (path.source === 'openrouteservice') {
+    return (
+      <p className="map-note" title={path.attribution}>
+        🚶 Gerçek yürüme yolu{path.distance_km != null ? ` · ${path.distance_km.toFixed(1)} km yürüyerek` : ''}
+        <small> · kesikli: toplu taşıma</small>
+      </p>
+    );
+  }
+  return path.warning ? <p className="map-note warn-note">⚠ {path.warning}</p> : null;
+}
+
 // days: [{ day_number, items: [{ poi_id, name, lat, lng, start_time, end_time }] }]
 // activeDay: null = hepsi
-export default function RouteMap({ days, start, activeDay = null }) {
+// path: etkin günün harita servisi sonucu { source, legs: [{ mode, coordinates: [[lat,lng],...] }], warning }
+export default function RouteMap({ days, start, activeDay = null, path = null }) {
   const shown = days.filter((d) => activeDay === null || d.day_number === activeDay);
   const points = shown.flatMap((d) => d.items.map((i) => [i.lat, i.lng]));
   if (start) points.push([start.lat, start.lng]);
 
   return (
+    <>
     <MapContainer center={[41.015, 28.98]} zoom={12} className="map" scrollWheelZoom>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıda bulunanlar'
@@ -38,9 +55,16 @@ export default function RouteMap({ days, start, activeDay = null }) {
         const color = dayColor(d.day_number);
         const line = d.items.map((i) => [i.lat, i.lng]);
         if (start && line.length) line.unshift([start.lat, start.lng]);
+        // Gerçek yol varsa: yürüyüş bacakları düz çizgi, toplu taşıma bacakları kesikli (yürüme yolu üzerinden yaklaşık)
+        const real = d.day_number === activeDay && path?.source === 'openrouteservice' && path.legs?.length;
         return (
           <Fragment key={d.day_number}>
-            <Polyline positions={line} pathOptions={{ color, weight: 4, opacity: 0.75, dashArray: '6 8' }} />
+            {real
+              ? path.legs.map((leg, i) => (
+                  <Polyline key={i} positions={leg.coordinates}
+                            pathOptions={{ color, weight: 5, opacity: 0.85, dashArray: leg.mode === 'toplu-tasima' ? '2 8' : null }} />
+                ))
+              : <Polyline positions={line} pathOptions={{ color, weight: 4, opacity: 0.75, dashArray: '6 8' }} />}
             {d.items.map((it, idx) => (
               <CircleMarker key={it.poi_id} center={[it.lat, it.lng]} radius={11}
                             pathOptions={{ color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 }}>
@@ -56,5 +80,7 @@ export default function RouteMap({ days, start, activeDay = null }) {
         );
       })}
     </MapContainer>
+    <PathNote path={path} />
+    </>
   );
 }

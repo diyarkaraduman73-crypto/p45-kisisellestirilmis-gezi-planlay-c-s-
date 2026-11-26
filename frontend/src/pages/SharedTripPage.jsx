@@ -29,6 +29,7 @@ export default function SharedTripPage({ code }) {
       <TripView
         {...savedTripToView(trip)}
         start={null}
+        loadPath={(day) => api.sharedDayPath(code, day.day_number)}
         header={
           <>
             <span className="badge">Paylaşılan rota</span>

@@ -1,12 +1,29 @@
 // Rota görünümü (önizleme, kayıtlı rota ve paylaşım sayfası ortak kullanır):
 // gün sekmeleri + zaman çizelgesi + harita
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import RouteMap, { dayColor } from './RouteMap.jsx';
 import DayTimeline from './DayTimeline.jsx';
 
-export default function TripView({ days, start, totals, header }) {
+// loadPath(day) → Promise<{ source, legs, warning? }>: o günün gerçek yürüme yolu (Hafta 9, harita servisi)
+export default function TripView({ days, start, totals, header, loadPath }) {
   const [active, setActive] = useState(days[0]?.day_number ?? 1);
   const day = days.find((d) => d.day_number === active) ?? days[0];
+
+  // Gün başına yol: her gün yalnızca ilk açıldığında bir kez istenir (sekmeler arasında gidip gelmek kota harcamaz)
+  const [paths, setPaths] = useState({});
+  const requested = useRef(new Set());
+  useEffect(() => {
+    if (!loadPath || !day || day.items.length < 1 || requested.current.has(day.day_number)) return;
+    const n = day.day_number;
+    requested.current.add(n);
+    setPaths((p) => ({ ...p, [n]: { loading: true } }));
+    loadPath(day)
+      .then((r) => setPaths((p) => ({ ...p, [n]: r })))
+      .catch((e) => {
+        requested.current.delete(n); // hata kalıcı değil: sekmeye dönünce yeniden denenir
+        setPaths((p) => ({ ...p, [n]: { source: 'duz-cizgi', legs: null, warning: `Gerçek yol alınamadı: ${e.message}` } }));
+      });
+  }, [day, loadPath]);
 
   return (
     <div className="trip-view">
@@ -35,7 +52,7 @@ export default function TripView({ days, start, totals, header }) {
         )}
       </aside>
       <section className="map-wrap">
-        <RouteMap days={days} start={start} activeDay={active} />
+        <RouteMap days={days} start={start} activeDay={active} path={paths[active]} />
       </section>
     </div>
   );
