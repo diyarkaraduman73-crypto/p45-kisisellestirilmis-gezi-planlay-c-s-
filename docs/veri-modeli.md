@@ -17,6 +17,8 @@ erDiagram
     TRIPS ||--|{ DAY_PLANS : "günlere bölünür (1-N)"
     DAY_PLANS ||--o{ DAY_PLAN_ITEMS : "durak içerir"
     POIS ||--o{ DAY_PLAN_ITEMS : "durak olur"
+    USERS |o--o{ AI_LOGS : "yapay zekâ kullanır"
+    TRIPS |o--o{ AI_LOGS : "rehberi üretilir"
     POIS ||--o{ POI_TAGS : "etiketlenir"
     TAGS ||--o{ POI_TAGS : "N-N"
 
@@ -102,8 +104,21 @@ erDiagram
         time day_end
         float start_lat
         float start_lng
+        jsonb ai_guide
         timestamptz created_at
         timestamptz updated_at
+    }
+    AI_LOGS {
+        int id PK
+        int user_id FK
+        int trip_id FK
+        varchar feature
+        varchar model
+        varchar prompt_version
+        varchar status
+        int latency_ms
+        jsonb issues
+        timestamptz created_at
     }
     DAY_PLANS {
         int id PK
@@ -134,6 +149,7 @@ erDiagram
 | **POI** | `pois`, `cities`, `tags`, `poi_tags` | Gezilecek noktalar, şehir (merkez + yarıçap), etiketler (Hafta 6) |
 | **Rota** | `trips` | Kullanıcının bir şehir için oluşturduğu gezi; üretim parametreleri ve paylaşım ayarı (Hafta 7) |
 | **Gün planı** | `day_plans`, `day_plan_items` | Rotanın her günü; sıralı, saatli duraklar ve önceki noktadan yol süresi/mesafesi (Hafta 7) |
+| **Yapay zekâ** | `trips.ai_guide`, `ai_logs` | Rotanın son kişisel rehberi (JSONB) ve her yapay zekâ çağrısının günlüğü: model, istem sürümü, doğrulama durumu, süre (Hafta 10). `ai_guide` JSONB çünkü biçimi istem sürümüyle değişebilir ve hep bütün olarak okunur/yazılır; sorgulanan alanlar (`ai_logs.status`, `created_at`) ise ayrı sütun |
 
 ## İlişki türleri
 

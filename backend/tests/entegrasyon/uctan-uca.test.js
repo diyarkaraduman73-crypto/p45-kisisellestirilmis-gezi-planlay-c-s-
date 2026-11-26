@@ -158,6 +158,26 @@ test('9b) Harita (H9): gün yolu döner; servis yoksa düz çizgi + uyarı, payl
   assert.equal(ankara.status, 400, 'şehir dışı noktalar için servisimiz vekil olarak kullanılamaz');
 });
 
+test('9c) Yapay zekâ (H10): rehber üretilir, doğrulanmış; öneriler planda değil; kaynak açık', async (t) => {
+  if (skip) return t.skip(skip);
+  const r = await call('POST', `/api/trips/${ctx.tripId}/guide`);
+  assert.equal(r.status, 201, JSON.stringify(r.data));
+  const g = r.data;
+  assert.ok(['yapay-zeka', 'sablon'].includes(g.kaynak));
+  assert.ok(g.istem_surumu && g.genel_bakis);
+  assert.equal(g.gunler.length, ctx.preview.days.length, 'her gün için bir bölüm');
+  const planIds = new Set(ctx.preview.days.flatMap((d) => d.items.map((i) => i.poi_id)));
+  assert.ok(g.oneriler.length <= 3 && g.oneriler.every((o) => !planIds.has(o.poi_id)), 'Y3');
+  for (const d of g.gunler) {
+    const dayIds = new Set(ctx.preview.days.find((x) => x.day_number === d.gun).items.map((i) => i.poi_id));
+    assert.ok(d.ipuclari.every((tip) => dayIds.has(tip.poi_id)), 'D4: ipucu yalnızca o günün duraklarına');
+  }
+  if (g.kaynak === 'sablon') assert.ok(g.uyarilar.length, 'şablona düşünce neden yazılmalı');
+
+  assert.deepEqual((await call('GET', `/api/trips/${ctx.tripId}`)).data.ai_guide.genel_bakis, g.genel_bakis, 'kaydedildi');
+  assert.equal((await call('GET', '/api/ai-logs')).status, 403, 'günlük yalnızca yöneticiye açık');
+});
+
 test('10) Temizlik: rota silinir, çıkıştan sonra token geçersiz', async (t) => {
   if (skip) return t.skip(skip);
   assert.equal((await call('DELETE', `/api/trips/${ctx.tripId}`)).status, 204);

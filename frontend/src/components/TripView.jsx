@@ -5,7 +5,8 @@ import RouteMap, { dayColor } from './RouteMap.jsx';
 import DayTimeline from './DayTimeline.jsx';
 
 // loadPath(day) → Promise<{ source, legs, warning? }>: o günün gerçek yürüme yolu (Hafta 9, harita servisi)
-export default function TripView({ days, start, totals, header, loadPath }) {
+// footer(activeDay): zaman çizelgesinin altına eklenecek içerik (ör. yapay zekâ rehberi, Hafta 10)
+export default function TripView({ days, start, totals, header, loadPath, footer }) {
   const [active, setActive] = useState(days[0]?.day_number ?? 1);
   const day = days.find((d) => d.day_number === active) ?? days[0];
 
@@ -50,6 +51,7 @@ export default function TripView({ days, start, totals, header, loadPath }) {
             {day.items.length ? <DayTimeline day={day} /> : <p className="muted">Bu gün için durak yok.</p>}
           </>
         )}
+        {footer?.(active)}
       </aside>
       <section className="map-wrap">
         <RouteMap days={days} start={start} activeDay={active} path={paths[active]} />

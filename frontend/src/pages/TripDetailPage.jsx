@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../services/api.js';
 import { navigate } from '../hooks/useRoute.js';
 import TripView, { savedTripToView } from '../components/TripView.jsx';
+import TripGuide from '../components/TripGuide.jsx';
 
 export const shareUrl = (code) => `${window.location.origin}${window.location.pathname}#/paylasim/${code}`;
 
@@ -43,6 +44,10 @@ export default function TripDetailPage({ id }) {
       <TripView
         {...view}
         loadPath={(day) => api.tripDayPath(trip.id, day.day_number)}
+        footer={(activeDay) => (
+          <TripGuide guide={trip.ai_guide} activeDay={activeDay}
+                     onGenerate={async () => { const g = await api.generateGuide(trip.id); setTrip((t) => ({ ...t, ai_guide: g })); }} />
+        )}
         header={
           <>
             <a href="#/rotalarim" className="link-btn back">← Rotalarım</a>

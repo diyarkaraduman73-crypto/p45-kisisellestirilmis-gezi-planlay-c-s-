@@ -1,6 +1,6 @@
 # 🧭 P45 · Kişiselleştirilmiş Gezi Planlayıcı
 
-**Güncel sürüm:** `0.9.0` · Ara sürüm (vize): `v0.8.0` · [Değişiklik günlüğü](CHANGELOG.md) · [Demo senaryosu](docs/demo-senaryosu.md)
+**Güncel sürüm:** `0.10.0` · Ara sürüm (vize): `v0.8.0` · [Değişiklik günlüğü](CHANGELOG.md) · [Demo senaryosu](docs/demo-senaryosu.md)
 
 **Öğrenci:** Diyar Karaduman · **Numara:** 251161035
 
@@ -11,7 +11,7 @@
 | **Problem** | Gezginler ilgi alanlarına uygun, zaman ve konuma göre optimize rota oluşturmakta zorlanıyor. |
 | **Hedef kullanıcı** | Yerli ve yabancı gezginler |
 | **Temel modüller** | İlgi/tercih profili · POI kataloğu · Rota üretimi · Harita/gün planı · Kaydet/paylaş · Öneri |
-| **Yapay zekâ** | Tercih ve süreye göre gün gün gezi planı ve yerel öneriler |
+| **Yapay zekâ** | Tercih ve süreye göre gün gün gezi planı ve yerel öneriler — [nasıl çalışır](docs/moduller/yapay-zeka-bileseni.md) |
 
 ## Teknolojiler
 
@@ -21,7 +21,7 @@
 | Backend | Node.js + Express (REST API) | Render |
 | Veritabanı | PostgreSQL | Neon |
 | Harita yolu | openrouteservice (HeiGIT) Directions API | Ücretsiz anahtar (2000/gün) |
-| Yapay zekâ | Groq LLM API (ileriki haftalar) | Groq Free |
+| Yapay zekâ | Groq LLM API (`openai/gpt-oss-20b`): kişisel gezi rehberi ve öneriler | Groq ücretsiz anahtar |
 
 ## Klasör yapısı
 
@@ -126,6 +126,8 @@ Yayındaki sunucuya karşı: `API_URL=https://<servis>.onrender.com npm run test
 | POST | `/api/trips/:id/share` | 👤 | Paylaşımı aç/kapat, bağlantıyı yenile |
 | GET | `/api/trips/:id/days/:day/path` | 👤 | Günün gerçek yürüme yolu (harita servisi; yoksa düz çizgi + uyarı) |
 | GET | `/api/trips/shared/:code/days/:day/path` | 🔓 | Paylaşılan rotanın günlük yolu (başlangıç noktası hariç) |
+| POST | `/api/trips/:id/guide` | 👤 | Yapay zekâ ile kişisel gezi rehberi + yerel öneriler (doğrulanmış; yoksa şablon). 10 dk'da 5 |
+| GET | `/api/ai-logs` | 🛡️ | Yapay zekâ kullanım günlüğü |
 | POST | `/api/routing/path` | 🔑 | Önizleme için yol: `{ points: [{lat,lng}], modes }` (≤ 12 nokta, şehir içinde) |
 | GET | `/api/trips/shared/:code` | 🔓 | Paylaşılan rota (yalnızca paylaşım açıksa) |
 
@@ -134,7 +136,7 @@ Korumalı uçlara `Authorization: Bearer <token>` başlığıyla istek atılır.
 ## Ücretsiz yayınlama
 
 1. **Neon:** Proje oluştur → bağlantı adresini kopyala → yerelde `npm run db:setup`.
-2. **Render:** New → Web Service → bu depo → *Root Directory* `backend`, *Build* `npm install`, *Start* `npm start`, plan **Free**. Ortam değişkenleri: `DATABASE_URL`, `CORS_ORIGIN` (Vercel adresin), `JWT_SECRET` (en az 32 karakter rastgele), `NODE_ENV=production`, `ORS_API_KEY` (harita; account.heigit.org'dan ücretsiz).
+2. **Render:** New → Web Service → bu depo → *Root Directory* `backend`, *Build* `npm install`, *Start* `npm start`, plan **Free**. Ortam değişkenleri: `DATABASE_URL`, `CORS_ORIGIN` (Vercel adresin), `JWT_SECRET` (en az 32 karakter rastgele), `NODE_ENV=production`, `ORS_API_KEY` (harita; account.heigit.org'dan ücretsiz), `GROQ_API_KEY` (yapay zekâ; console.groq.com/keys'ten ücretsiz). İkisi de boş bırakılabilir: uygulama düz çizgi ve şablon rehberle çalışır.
 3. **Vercel:** New Project → bu depo → *Root Directory* `frontend` (Vite otomatik algılanır). Ortam değişkeni: `VITE_API_URL` = Render adresin. **API anahtarlarını Vercel'e koymayın** (`VITE_*` değişkenleri tarayıcıya gömülür).
 
 > Render ücretsiz servisi 15 dk boşta kalınca uyur; ilk istek yaklaşık 1 dakika sürebilir. Sunumdan önce siteyi bir kez açın.
@@ -150,5 +152,6 @@ Korumalı uçlara `Authorization: Bearer <token>` başlığıyla istek atılır.
 | 7 | Çekirdek Modül B: Rota ve Gün Planı Üretimi | [rapor](docs/haftalar/hafta-7/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-7/yapay-zeka-gunlugu.md) · [modül açıklaması](docs/moduller/rota-gun-plani.md) |
 | 8 | **VİZE** · Ara sürüm `v0.8.0`, entegrasyon, sözlü hazırlık | [rapor](docs/haftalar/hafta-8/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-8/yapay-zeka-gunlugu.md) · [demo senaryosu](docs/demo-senaryosu.md) |
 | 9 | Harici API entegrasyonu: Harita | [rapor](docs/haftalar/hafta-9/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-9/yapay-zeka-gunlugu.md) · [modül açıklaması](docs/moduller/harita-entegrasyonu.md) |
+| 10 | Yapay zekâ bileşeni: kişisel plan ve öneri | [rapor](docs/haftalar/hafta-10/rapor.md) · [yapay zekâ günlüğü](docs/haftalar/hafta-10/yapay-zeka-gunlugu.md) · [modül açıklaması](docs/moduller/yapay-zeka-bileseni.md) |
 
 Her haftanın raporu ve yapay zekâ kullanım günlüğü `docs/haftalar/hafta-N/` klasöründedir. Güncel kod `main` dalındadır; her haftanın teslim edilen son hali ayrıca `hafta-N` dalında saklanır. Ara sürüm `v0.8.0` etiketiyle işaretlidir (`git checkout v0.8.0`).

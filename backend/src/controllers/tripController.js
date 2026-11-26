@@ -1,6 +1,7 @@
 // SUNUM KATMANI (API): rotalar
 import * as tripService from '../services/tripService.js';
 import * as routePlanService from '../services/routePlanService.js';
+import * as aiGuideService from '../services/aiGuideService.js';
 
 export const get = async (req, res) => res.json(await tripService.getTrip(req.actor, req.params.id));
 export const getShared = async (req, res) => res.json(await tripService.getTripByShareCode(req.params.code));
@@ -15,3 +16,4 @@ export const plan = async (req, res) => res.json(await routePlanService.previewP
 export const generate = async (req, res) => res.status(201).json(await routePlanService.generateAndSave(req.actor, req.body || {}));
 export const dayPath = async (req, res) => res.json(await tripService.getDayPath(req.actor, req.params.id, req.params.day));
 export const sharedDayPath = async (req, res) => res.json(await tripService.getSharedDayPath(req.params.code, req.params.day));
+export const guide = async (req, res) => res.status(201).json(await aiGuideService.createGuide(req.actor, req.params.id));

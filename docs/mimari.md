@@ -27,13 +27,15 @@ flowchart LR
 
     DB[(PostgreSQL<br/>Neon)]
     OSM[[OpenStreetMap<br/>harita karoları]]
-    LLM[[Groq LLM API<br/>gezi planı - ileride]]
+    LLM[[Groq LLM API<br/>kişisel gezi rehberi - H10]]
+    ORS[[openrouteservice<br/>yürüme yolu - H9]]
 
     U --> FE
     S -- "HTTPS / JSON" --> R
     RP -- SQL --> DB
     C -. harita .-> OSM
-    SV -. ileride .-> LLM
+    SV -- "HTTPS, anahtar sunucuda" --> LLM
+    SV -- "HTTPS, anahtar sunucuda" --> ORS
 ```
 
 ## Katmanların sorumlulukları
@@ -42,7 +44,7 @@ flowchart LR
 |---|---|---|---|
 | **Sunum (API)** | `backend/src/routes`, `backend/src/controllers` | URL'i karşılar, istek parametrelerini okur, JSON yanıt ve HTTP durum kodu döner | İş kuralı içermez, SQL yazmaz |
 | **Yetkilendirme** | `backend/src/middleware/auth.js` | Token'ı doğrular (401), rolü kontrol eder (403); istek controller'a ulaşmadan çalışır | Sahiplik kuralı servis katmanındadır |
-| **İş (servis)** | `backend/src/services` | Doğrulama, iş kuralları (ör. geçersiz ilgi alanı reddi), ileride rota üretimi ve yapay zekâ çağrısı | HTTP'yi (`req/res`) ve SQL'i bilmez |
+| **İş (servis)** | `backend/src/services` | Doğrulama, iş kuralları, rota üretimi (H7), harita servisi (H9) ve yapay zekâ çağrısı + çıktı doğrulama (H10) | HTTP'yi (`req/res`) ve SQL'i bilmez |
 | **Veri (repository)** | `backend/src/repositories`, `backend/src/config/db.js` | Parametreli SQL ile CRUD, transaction (`withTransaction`); DB yoksa okumalar seed verisinden | İş kuralı içermez |
 | **Sunum (arayüz)** | `frontend/src/pages`, `frontend/src/components` | Ekranlar ve tekrar kullanılabilir bileşenler | Doğrudan `fetch` yapmaz |
 | **İstemci servis** | `frontend/src/services` | Backend ile tüm iletişim | Arayüz çizmez |
