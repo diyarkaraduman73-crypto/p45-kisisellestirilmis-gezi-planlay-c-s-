@@ -26,8 +26,15 @@ export function requiredString(value, label, max) {
 
 export function optionalDate(value, label = 'Tarih') {
   if (value === undefined || value === null || value === '') return undefined;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(value))) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     throw new ValidationError(`${label} YYYY-AA-GG biçiminde olmalı`);
+  }
+  // Hafta 8 düzeltmesi: Date.parse('2026-02-30') geçerli sayıp 2 Mart'a çeviriyordu;
+  // değer veritabanına ulaşınca PostgreSQL reddediyor ve kullanıcı "Sunucu hatası" (500) görüyordu.
+  // Tarihi gerçekten var mı diye geri dönüştürerek kontrol ediyoruz.
+  const d = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== value) {
+    throw new ValidationError(`${label} geçerli bir takvim tarihi değil`);
   }
   return value;
 }
