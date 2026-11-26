@@ -10,6 +10,9 @@ export default function AdminPage() {
   const [interests, setInterests] = useState([]);
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
+  const [ai, setAi] = useState(null);
+
+  useEffect(() => { api.aiLogs().then(setAi).catch(() => setAi(null)); }, []);
 
   useEffect(() => {
     Promise.all([api.users(), api.interests()])
@@ -58,6 +61,28 @@ export default function AdminPage() {
             </tbody>
           </table>
         </section>
+
+        {ai && (
+          <section className="card">
+            <h2>Yapay zekâ günlüğü <span className="count">{ai.logs.length}</span></h2>
+            <p className="muted small">
+              {ai.summary.map((s) => `${s.status}: ${s.adet}${s.ort_sure_ms ? ` (ort. ${s.ort_sure_ms} ms)` : ''}`).join(' · ') || 'Henüz kayıt yok.'}
+            </p>
+            <table className="table">
+              <thead><tr><th>Zaman</th><th>Model / istem</th><th>Durum</th><th>Sorunlar</th></tr></thead>
+              <tbody>
+                {ai.logs.map((l) => (
+                  <tr key={l.id}>
+                    <td className="muted">{new Date(l.created_at).toLocaleString('tr-TR')}</td>
+                    <td>{l.model ?? '—'}<br /><small className="muted">{l.prompt_version}{l.latency_ms != null ? ` · ${l.latency_ms} ms` : ''}</small></td>
+                    <td>{l.status}</td>
+                    <td><small>{(l.issues || []).join('; ') || '—'}</small></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
       </div>
     </main>
   );

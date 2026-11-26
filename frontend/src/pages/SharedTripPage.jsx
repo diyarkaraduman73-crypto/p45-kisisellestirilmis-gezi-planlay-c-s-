@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../services/api.js';
 import TripView, { savedTripToView } from '../components/TripView.jsx';
+import TripGuide from '../components/TripGuide.jsx';
 
 export default function SharedTripPage({ code }) {
   const [trip, setTrip] = useState(null);
@@ -30,6 +31,7 @@ export default function SharedTripPage({ code }) {
         {...savedTripToView(trip)}
         start={null}
         loadPath={(day) => api.sharedDayPath(code, day.day_number)}
+        footer={(activeDay) => <TripGuide guide={trip.ai_guide} activeDay={activeDay} />}
         header={
           <>
             <span className="badge">Paylaşılan rota</span>

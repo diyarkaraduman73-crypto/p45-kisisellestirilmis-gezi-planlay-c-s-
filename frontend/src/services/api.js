@@ -81,6 +81,9 @@ export const api = {
   // harita entegrasyonu (Hafta 9): gerçek yürüme yolu — anahtar sunucuda, tarayıcı servisle doğrudan konuşmaz
   routePath: (points, modes) => request('/api/routing/path', { method: 'POST', body: { points, modes } }),
   tripDayPath: (id, day) => request(`/api/trips/${id}/days/${day}/path`),
+  // yapay zekâ (Hafta 10): kişisel gezi rehberi + yerel öneriler (anahtar sunucuda)
+  generateGuide: (id) => request(`/api/trips/${id}/guide`, { method: 'POST' }),
+  aiLogs: () => request('/api/ai-logs?limit=30'),
   sharedDayPath: (code, day) => request(`/api/trips/shared/${encodeURIComponent(code)}/days/${day}/path`),
 
   // yönetici

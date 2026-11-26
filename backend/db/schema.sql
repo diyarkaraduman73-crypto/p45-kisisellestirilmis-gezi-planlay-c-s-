@@ -19,6 +19,47 @@ END;
 $$;
 
 --
+-- Name: ai_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_logs (
+    id integer NOT NULL,
+    user_id integer,
+    trip_id integer,
+    feature character varying(40) NOT NULL,
+    model character varying(80),
+    prompt_version character varying(20) NOT NULL,
+    prompt_hash character(64),
+    status character varying(20) NOT NULL,
+    latency_ms integer,
+    input_tokens integer,
+    output_tokens integer,
+    issues jsonb DEFAULT '[]'::jsonb NOT NULL,
+    output_excerpt text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT chk_ai_logs_numbers CHECK ((((latency_ms IS NULL) OR (latency_ms >= 0)) AND ((input_tokens IS NULL) OR (input_tokens >= 0)) AND ((output_tokens IS NULL) OR (output_tokens >= 0)))),
+    CONSTRAINT chk_ai_logs_status CHECK (((status)::text = ANY ((ARRAY['gecerli'::character varying, 'duzeltildi'::character varying, 'gecersiz'::character varying, 'hata'::character varying, 'ayarsiz'::character varying])::text[])))
+);
+
+--
+-- Name: ai_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ai_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+--
+-- Name: ai_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ai_logs_id_seq OWNED BY public.ai_logs.id;
+
+--
 -- Name: cities; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -272,6 +313,7 @@ CREATE TABLE public.trips (
     start_lng double precision,
     generated boolean DEFAULT false NOT NULL,
     is_public boolean DEFAULT false NOT NULL,
+    ai_guide jsonb,
     CONSTRAINT chk_trips_day_window CHECK (((day_start IS NULL) OR (day_end IS NULL) OR (day_end >= (day_start + '03:00:00'::interval)))),
     CONSTRAINT chk_trips_pace CHECK (((pace IS NULL) OR ((pace)::text = ANY ((ARRAY['sakin'::character varying, 'normal'::character varying, 'yogun'::character varying])::text[])))),
     CONSTRAINT chk_trips_start_point CHECK (((start_lat IS NULL) = (start_lng IS NULL))),
@@ -357,6 +399,12 @@ CREATE SEQUENCE public.users_id_seq
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 --
+-- Name: ai_logs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_logs ALTER COLUMN id SET DEFAULT nextval('public.ai_logs_id_seq'::regclass);
+
+--
 -- Name: cities id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -403,6 +451,13 @@ ALTER TABLE ONLY public.trips ALTER COLUMN id SET DEFAULT nextval('public.trips_
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+--
+-- Name: ai_logs ai_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_logs
+    ADD CONSTRAINT ai_logs_pkey PRIMARY KEY (id);
 
 --
 -- Name: cities cities_name_country_key; Type: CONSTRAINT; Schema: public; Owner: -
@@ -545,6 +600,18 @@ ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 
 --
+-- Name: idx_ai_logs_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_logs_created ON public.ai_logs USING btree (created_at DESC);
+
+--
+-- Name: idx_ai_logs_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_logs_user ON public.ai_logs USING btree (user_id);
+
+--
 -- Name: idx_day_plan_items_poi; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -645,6 +712,20 @@ CREATE TRIGGER trg_pois_updated_at BEFORE UPDATE ON public.pois FOR EACH ROW EXE
 --
 
 CREATE TRIGGER trg_trips_updated_at BEFORE UPDATE ON public.trips FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+--
+-- Name: ai_logs ai_logs_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_logs
+    ADD CONSTRAINT ai_logs_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id) ON DELETE SET NULL;
+
+--
+-- Name: ai_logs ai_logs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_logs
+    ADD CONSTRAINT ai_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
 --
 -- Name: day_plan_items day_plan_items_day_plan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -

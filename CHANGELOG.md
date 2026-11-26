@@ -8,7 +8,18 @@ Bu projede [anlamsal sürümleme](https://semver.org/lang/tr/) (MAJOR.MINOR.PATC
 
 Her sürüm Git'te `vX.Y.Z` etiketiyle işaretlenir. Çalışan sürüm `GET /api/health` yanıtındaki `version` alanında ve arayüzün üst çubuğunda görünür.
 
-## [0.9.0] — 2026-11-26 · Harita entegrasyonu (Hafta 9)
+## [0.10.0] — 2026-11-26 · Yapay zekâ bileşeni (Hafta 10)
+
+### Eklendi
+- Kişisel gezi rehberi: Groq LLM (`openai/gpt-oss-20b`, `GROQ_API_KEY`) planın her gününü ilgi alanlarına göre anlatır, durak ipuçları yazar, katalogdan en fazla 3 yerel öneri seçer. `POST /api/trips/:id/guide`.
+- Çıktı doğrulama (D1–D8) ve yapay zekâsız şablon yedek; arayüzde kaynak rozeti.
+- Migration 007: `trips.ai_guide`, `ai_logs` (yapay zekâ kullanım günlüğü); Yönetim panelinde görünüm, `GET /api/ai-logs`.
+- `/api/health` → `services.yapayZeka`.
+
+### Değişti
+- Rota planı (gün listesi) güncellenince eski rehber silinir.
+
+ — 2026-11-26 · Harita entegrasyonu (Hafta 9)
 
 ### Eklendi
 - Duraklar arasında gerçek yürüme yolu: openrouteservice (HeiGIT) Directions API, `ORS_API_KEY` ile.

@@ -86,7 +86,7 @@ sequenceDiagram
 | A05 Security Misconfiguration | Güvenlik başlıkları, `X-Powered-By` kapalı, üretimde zayıf anahtarla başlamama |
 | A07 Identification and Authentication Failures | Parola politikası, kilitleme, genel hata mesajı, oturum süresi ve iptali |
 
-## 6. Harici API anahtarları (Hafta 9)
+## 6. Harici API anahtarları (Hafta 9–10)
 
 | Kural | Nasıl uygulandı |
 |---|---|
@@ -97,3 +97,12 @@ sequenceDiagram
 | Servisimiz başkalarına bedava vekil olmasın | Uçlar giriş veya paylaşım kodu ister; kullanıcı/IP başına dakikada 60 istek; nokta sayısı ≤ 12 ve şehir hizmet alanı içinde |
 | Kotayı korumak | Dışarıya dakikada en fazla 30 istek (plan sınırı 40/dk, 2000/gün), aynı yol 24 saat önbellekte |
 | Anahtar sızarsa | HeiGIT panelinden anahtarı iptal edip yenisini Render'a gir; kod değişikliği gerekmez |
+| Yapay zekâ anahtarı (H10) | `GROQ_API_KEY` aynı kurallarla: yalnızca sunucuda, `Authorization: Bearer` başlığında; `/api/health` yalnızca model adını gösterir |
+
+### Yapay zekâya giden veri (Hafta 10)
+
+- Gönderilen: şehir, gün sayısı, tempo, bütçe, ilgi düzeyleri, plandaki ve katalogdaki **herkese açık** mekân bilgileri.
+- Gönderilmeyen: ad, e-posta, kullanıcı kimliği, başlangıç (otel) konumu, rota başlığı (`yapay-zeka.test.js` ile doğrulanır).
+- Model çıktısı **güvenilmeyen girdi** gibi işlenir: HTML/markdown/web adresi temizlenir, kimlikler plan/katalogla karşılaştırılır (D1–D8); arayüz metni React ile düz metin olarak basar (`dangerouslySetInnerHTML` yok).
+- Maliyet/kötüye kullanım: kullanıcı başına 10 dakikada 5 üretim, dışarıya dakikada 20 istek.
+- `ai_logs` istemin kendisini değil sürümünü ve SHA-256 özetini saklar; kayıtları yalnızca yönetici görür.

@@ -46,7 +46,7 @@ export async function findById(id, db = requireDb()) {
   const { rows } = await db.query(
     `SELECT t.id, t.user_id, t.title, t.start_date, t.day_count, t.share_code, t.is_public,
             t.generated, t.pace, to_char(t.day_start, 'HH24:MI') AS day_start, to_char(t.day_end, 'HH24:MI') AS day_end,
-            t.start_lat, t.start_lng, t.created_at, t.updated_at, c.name AS city,
+            t.start_lat, t.start_lng, t.ai_guide, t.created_at, t.updated_at, c.name AS city,
             COALESCE((
               SELECT json_agg(json_build_object(
                        'id', d.id, 'day_number', d.day_number, 'summary', d.summary,
@@ -118,6 +118,7 @@ export async function update(id, { title, startDate, days }) {
     if (rowCount === 0) return null;
     if (days) {
       await client.query('DELETE FROM day_plans WHERE trip_id = $1', [id]); // durakları CASCADE siler
+      await client.query('UPDATE trips SET ai_guide = NULL WHERE id = $1', [id]); // eski rehber yeni plana uymaz (H10)
       await insertDays(client, id, days);
       await client.query('UPDATE trips SET day_count = GREATEST(day_count, $2) WHERE id = $1', [id, days.length]);
     }
@@ -129,4 +130,9 @@ export async function update(id, { title, startDate, days }) {
 export async function remove(id) {
   const { rowCount } = await requireDb().query('DELETE FROM trips WHERE id = $1', [id]);
   return rowCount > 0;
+}
+
+// Yapay zekâ rehberini kaydeder (Hafta 10)
+export async function setGuide(id, guide) {
+  await requireDb().query('UPDATE trips SET ai_guide = $2 WHERE id = $1', [id, JSON.stringify(guide)]);
 }
